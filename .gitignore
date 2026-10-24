@@ -1,0 +1,30 @@
+# Planning & documentation (kept local)
+/GAME_PLAN.md
+/*.md
+/docs/
+# Note: nested .md files are NOT ignored on purpose — skills (SKILL.md) and plugins need them.
+
+# Paid / non-redistributable asset packs (licenses forbid committing them to a repo)
+apps/client/public/assets/vendor/
+
+# Dependencies & builds
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Local data & secrets
+*.sqlite
+*.sqlite-journal
+.env
+.env.*
+!.env.example
+
+# Personal Claude Code settings (launch.json stays shared)
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

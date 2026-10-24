@@ -1,0 +1,116 @@
+:root {
+  --ink: #181425;
+  --panel: #262b44;
+  --edge: #5a6988;
+  --text: #ead4aa;
+  --accent: #feae34;
+  --off: #8b9bb4;
+  --boss: #feae34;
+  --architect: #0099db;
+  --worker: #63c74d;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+#game {
+  display: block;
+  image-rendering: pixelated;
+  cursor: grab;
+  touch-action: none;
+}
+
+#game.dragging {
+  cursor: grabbing;
+}
+
+.name-tags {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.name-tag {
+  --role: var(--worker);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px 2px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text);
+  background: rgb(24 20 37 / 0.85);
+  border: 2px solid var(--role);
+  will-change: transform;
+}
+
+/* Little pointer under the tag, aimed at the character's head. */
+.name-tag::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--role);
+  transform: translateX(-50%);
+}
+
+.name-tag small {
+  font-size: 6px;
+  color: var(--role);
+}
+
+.name-tag--boss {
+  --role: var(--boss);
+}
+
+.name-tag--architect {
+  --role: var(--architect);
+}
+
+#hud {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  line-height: 2;
+  color: var(--text);
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px var(--edge);
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+}
+
+#hud kbd {
+  font-family: inherit;
+  color: var(--accent);
+}
+
+#hud .off {
+  color: var(--off);
+}

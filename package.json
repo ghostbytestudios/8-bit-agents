@@ -1,0 +1,14 @@
+{
+  "name": "harness",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @harness/client",
+    "build": "npm run build -w @harness/client",
+    "typecheck": "npm run typecheck -w @harness/client"
+  }
+}

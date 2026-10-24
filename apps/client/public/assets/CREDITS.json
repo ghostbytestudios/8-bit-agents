@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Furniture Kit (2.0)",
+    "author": "Kenney",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "license": "CC0-1.0",
+    "files": "kenney-furniture/*.glb"
+  }
+]
