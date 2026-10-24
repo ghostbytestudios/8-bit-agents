@@ -130,7 +130,7 @@ export class MockRun implements EventFeed {
       await this.tool('architect', 'Read', file, READ_BURST_SECONDS);
     }
     await this.tool('architect', 'WebSearch', 'todo app architecture', 3);
-    this.emit({ type: 'plan.updated', agentId: 'architect', markdown: 'API → storage → UI → tests' });
+    this.emit({ type: 'plan.updated', agentId: 'architect', markdown: 'API > storage > UI > tests' });
     this.say('architect', 'boss', 'Plan ready: API, storage, UI, tests.');
     this.status('architect', 'idle');
     this.status('boss', 'working');

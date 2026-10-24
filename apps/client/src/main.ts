@@ -307,9 +307,14 @@ async function start(): Promise<void> {
     const { right, forward } = panInput();
     officeCamera.pan(right * PAN_SPEED * dt, forward * PAN_SPEED * dt);
     const selected = selectedId ? choreographer.characterOf(selectedId) : null;
-    if (selected && isFollowing) officeCamera.target.set(selected.root.position.x, 0, selected.root.position.z);
+    if (selected && isFollowing) {
+      // Center the agent in the uncovered part of the screen, not behind the dock.
+      const dockOffset = dock.coveredWidth / 2 / pixelScale / PIXELS_PER_UNIT;
+      officeCamera.follow(selected.root.position, dt, dockOffset);
+    }
     dock.inspector.setFollowing(isFollowing && selected !== null);
     officeCamera.update();
+    pipeline.shiftBySubTexel(officeCamera.subTexel.x, officeCamera.subTexel.y);
 
     crowd.update(dt);
     choreographer.update(dt, time);

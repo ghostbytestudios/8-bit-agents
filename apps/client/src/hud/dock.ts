@@ -1,6 +1,6 @@
 import type { WorldState } from '../state/world';
 import { ActivityLog } from './activityLog';
-import { el } from './dom';
+import { button, el } from './dom';
 import { InboxPanel } from './inbox';
 import { Inspector } from './inspector';
 import { TaskBoard } from './taskBoard';
@@ -27,6 +27,7 @@ export class Dock {
   private readonly tasks: TaskBoard;
   private readonly log = new ActivityLog();
   private readonly tabs = new Map<DockTab, Tab>();
+  private readonly tabbed = el('section', 'panel tabbed');
   private active: DockTab = 'inbox';
 
   constructor(parent: HTMLElement, handlers: DockHandlers, isSimulated: boolean) {
@@ -39,10 +40,12 @@ export class Dock {
     this.inbox = new InboxPanel({ onRespond: handlers.onRespond, onSelectAgent: handlers.onSelectAgent });
     this.tasks = new TaskBoard(handlers.onSelectAgent);
 
-    const tabbed = el('section', 'panel tabbed');
+    const tabbed = this.tabbed;
     const tabList = el('div', 'tab-list');
     tabList.setAttribute('role', 'tablist');
-    tabbed.append(tabList);
+    const tabBar = el('div', 'tab-bar');
+    tabBar.append(tabList);
+    tabbed.append(tabBar);
     const panels: Array<[DockTab, string, HTMLElement]> = [
       ['inbox', 'INBOX', this.inbox.element],
       ['tasks', 'TASKS', this.tasks.element],
@@ -64,9 +67,23 @@ export class Dock {
       tabbed.append(panel);
       this.tabs.set(id, { button, panel });
     }
+    const close = button('tab-close', '✕', () => this.closeTabs());
+    close.setAttribute('aria-label', 'Close panel');
+    close.title = 'Close (I, T or L reopens)';
+    tabBar.append(close);
     this.root.append(this.inspector.element, tabbed);
     parent.append(this.root);
     this.openTab(this.active);
+  }
+
+  /**
+   * Screen pixels the dock covers on the right edge (0 when hidden or when the
+   * narrow-screen layout puts it along the bottom instead).
+   */
+  get coveredWidth(): number {
+    if (!this.visible) return 0;
+    const rect = this.root.getBoundingClientRect();
+    return rect.left > window.innerWidth / 2 ? window.innerWidth - rect.left : 0;
   }
 
   get visible(): boolean {
@@ -80,6 +97,7 @@ export class Dock {
   openTab(tab: DockTab, shouldFocus = false): void {
     this.active = tab;
     this.visible = true;
+    this.tabbed.hidden = false;
     for (const [id, { button, panel }] of this.tabs) {
       const isActive = id === tab;
       button.setAttribute('aria-selected', String(isActive));
@@ -87,6 +105,11 @@ export class Dock {
       panel.hidden = !isActive;
     }
     if (shouldFocus && tab === 'inbox') this.inbox.focusFirst();
+  }
+
+  /** Hides the INBOX / TASKS / LOG panel; the inspector (if open) stays. */
+  closeTabs(): void {
+    this.tabbed.hidden = true;
   }
 
   select(agentId: string | null): void {

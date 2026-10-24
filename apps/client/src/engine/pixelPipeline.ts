@@ -26,6 +26,8 @@ const DITHER_STRENGTH = 0.05;
 /** Minimum depth jump, in world units, that counts as a silhouette edge. */
 const OUTLINE_THRESHOLD = 0.12;
 const NORMAL_EDGE_STRENGTH = 0.35;
+/** Extra texels rendered on each side to hide the sub-texel scroll shift. */
+const MARGIN_TEXELS = 1;
 
 function createTarget(withDepth: boolean): WebGLRenderTarget {
   const target = new WebGLRenderTarget(1, 1, {
@@ -47,6 +49,8 @@ export class PixelPipeline {
   readonly renderer: WebGLRenderer;
   readonly settings: PixelSettings = { palette: false, outline: true, dither: false };
   readonly size = new Vector2(1, 1);
+  private readonly origin = new Vector2();
+  private pixelScale = 1;
 
   private readonly colorTarget = createTarget(true);
   private readonly normalTarget = createTarget(false);
@@ -90,14 +94,29 @@ export class PixelPipeline {
   }
 
   resize(viewportWidth: number, viewportHeight: number, pixelScale: number): void {
-    const width = Math.max(1, Math.floor(viewportWidth / pixelScale));
-    const height = Math.max(1, Math.floor(viewportHeight / pixelScale));
+    // A spare texel on every side, so shifting the canvas by a sub-texel never shows an edge.
+    const width = Math.max(1, Math.floor(viewportWidth / pixelScale)) + 2 * MARGIN_TEXELS;
+    const height = Math.max(1, Math.floor(viewportHeight / pixelScale)) + 2 * MARGIN_TEXELS;
     this.size.set(width, height);
+    this.pixelScale = pixelScale;
     this.renderer.setSize(width, height, false);
     this.canvas.style.width = `${width * pixelScale}px`;
     this.canvas.style.height = `${height * pixelScale}px`;
+    // Whole-pixel centering keeps every upscaled texel the same size.
+    this.origin.set(Math.round((viewportWidth - width * pixelScale) / 2), Math.round((viewportHeight - height * pixelScale) / 2));
+    this.shiftBySubTexel(0, 0);
     this.colorTarget.setSize(width, height);
     this.normalTarget.setSize(width, height);
+  }
+
+  /**
+   * Slides the upscaled canvas by the camera's sub-texel remainder (texels along
+   * screen right/up), so scrolling moves in screen pixels rather than whole texels.
+   */
+  shiftBySubTexel(rightTexels: number, upTexels: number): void {
+    const x = this.origin.x - Math.round(rightTexels * this.pixelScale);
+    const y = this.origin.y + Math.round(upTexels * this.pixelScale);
+    this.canvas.style.transform = `translate(${x}px, ${y}px)`;
   }
 
   render(scene: Scene, camera: OrthographicCamera): void {

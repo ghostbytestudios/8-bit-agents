@@ -23,7 +23,7 @@ export class ActivityLog {
   render(state: WorldState): void {
     const nameOf = (id: string) => state.agents.get(id)?.name ?? id.toUpperCase();
     const entries: LogEntry[] = [
-      ...state.messages.map((line) => ({ ts: line.ts, kind: 'chat' as const, who: `${nameOf(line.from)} → ${nameOf(line.to)}`, text: line.text })),
+      ...state.messages.map((line) => ({ ts: line.ts, kind: 'chat' as const, who: `${nameOf(line.from)} > ${nameOf(line.to)}`, text: line.text })),
       ...state.logs.map((line) => ({ ts: line.ts, kind: line.level, who: `${LOG_ICONS[line.level]} ${nameOf(line.agentId)}`, text: line.text })),
     ].sort((a, b) => a.ts - b.ts);
 

@@ -88,7 +88,7 @@ export class Inspector {
       tools: agent.recentTools.map((call) => `${TOOL_MARKS[call.state]} ${call.tool} ${call.summary}`),
       plan: state.plan?.agentId === agent.id ? state.plan.markdown : null,
       chat: conversationFor(state.messages, agent.id, CHAT_LINES).map((line) =>
-        line.from === agent.id ? `→ ${nameOf(line.to)}: ${line.text}` : `← ${nameOf(line.from)}: ${line.text}`,
+        line.from === agent.id ? `TO ${nameOf(line.to)}: ${line.text}` : `${nameOf(line.from)}: ${line.text}`,
       ),
     };
   }
