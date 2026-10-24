@@ -35,6 +35,10 @@ class ScriptedProvider implements ModelProvider {
   readonly received: Array<{ role: Role; input: TurnInput }> = [];
   constructor(private readonly script: Script) {}
 
+  async listModels() {
+    return ['m'];
+  }
+
   startConversation(options: ConversationOptions): Conversation {
     const role = roleOf(options);
     const sent: TurnInput[] = [];

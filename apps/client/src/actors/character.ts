@@ -55,6 +55,7 @@ export class Character {
   private readonly arms: [Group, Group];
   private readonly head = new Group();
   private readonly scratch = new Vector3();
+  private readonly painted: Array<{ mesh: Mesh; slot: keyof CharacterLook }> = [];
   private path: Vector3[] = [];
   private heading = 0;
   private targetHeading = 0;
@@ -66,11 +67,11 @@ export class Character {
     this.legs = [this.buildLeg(look, -1), this.buildLeg(look, 1)];
     this.arms = [this.buildArm(look, -1), this.buildArm(look, 1)];
 
-    const torso = block([0.24, TORSO_HEIGHT, 0.14], look.shirt);
+    const torso = this.part([0.24, TORSO_HEIGHT, 0.14], look, 'shirt');
     torso.position.y = LEG_HEIGHT + TORSO_HEIGHT / 2;
     this.body.add(torso);
     if (look.tie) {
-      const tie = block([0.04, 0.16, 0.012], look.tie);
+      const tie = this.part([0.04, 0.16, 0.012], look, 'tie');
       tie.position.set(0, LEG_HEIGHT + TORSO_HEIGHT - 0.1, 0.071);
       this.body.add(tie);
     }
@@ -220,11 +221,26 @@ export class Character {
     }
   }
 
+  /** Repaints the character (e.g. new shirt and hair colors from Settings) without rebuilding it. */
+  setLook(look: CharacterLook): void {
+    for (const { mesh, slot } of this.painted) {
+      const color = look[slot];
+      if (color) mesh.material = material(color);
+    }
+  }
+
+  /** A body part whose color comes from `slot` of the look, so `setLook` can repaint it. */
+  private part(size: [number, number, number], look: CharacterLook, slot: keyof CharacterLook, hangFromTop = false): Mesh {
+    const mesh = block(size, look[slot] ?? '#ff00ff', hangFromTop);
+    this.painted.push({ mesh, slot });
+    return mesh;
+  }
+
   private buildLeg(look: CharacterLook, side: -1 | 1): Group {
     const leg = new Group();
     leg.position.set(side * 0.055, LEG_HEIGHT, 0);
-    leg.add(block([0.09, LEG_HEIGHT, 0.1], look.pants, true));
-    const shoe = block([0.1, 0.05, 0.13], look.shoes);
+    leg.add(this.part([0.09, LEG_HEIGHT, 0.1], look, 'pants', true));
+    const shoe = this.part([0.1, 0.05, 0.13], look, 'shoes');
     shoe.position.set(0, -LEG_HEIGHT + 0.025, 0.015);
     leg.add(shoe);
     this.body.add(leg);
@@ -234,8 +250,8 @@ export class Character {
   private buildArm(look: CharacterLook, side: -1 | 1): Group {
     const arm = new Group();
     arm.position.set(side * 0.155, SHOULDER_Y, 0);
-    arm.add(block([0.07, 0.18, 0.08], look.shirt, true));
-    const hand = block([0.06, 0.06, 0.07], look.skin);
+    arm.add(this.part([0.07, 0.18, 0.08], look, 'shirt', true));
+    const hand = this.part([0.06, 0.06, 0.07], look, 'skin');
     hand.position.y = -0.21;
     arm.add(hand);
     this.body.add(arm);
@@ -244,11 +260,11 @@ export class Character {
 
   private buildHead(look: CharacterLook): void {
     this.head.position.y = LEG_HEIGHT + TORSO_HEIGHT;
-    const face = block([HEAD_SIZE, HEAD_SIZE, HEAD_SIZE], look.skin);
+    const face = this.part([HEAD_SIZE, HEAD_SIZE, HEAD_SIZE], look, 'skin');
     face.position.y = HEAD_SIZE / 2 + 0.01;
-    const hairTop = block([HEAD_SIZE + 0.01, 0.05, HEAD_SIZE + 0.01], look.hair);
+    const hairTop = this.part([HEAD_SIZE + 0.01, 0.05, HEAD_SIZE + 0.01], look, 'hair');
     hairTop.position.y = HEAD_SIZE + 0.02;
-    const hairBack = block([HEAD_SIZE + 0.01, 0.12, 0.04], look.hair);
+    const hairBack = this.part([HEAD_SIZE + 0.01, 0.12, 0.04], look, 'hair');
     hairBack.position.set(0, HEAD_SIZE - 0.04, -0.08);
     this.head.add(face, hairTop, hairBack);
     for (const side of [-1, 1]) {

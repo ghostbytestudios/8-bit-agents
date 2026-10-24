@@ -1,5 +1,5 @@
 import './style.css';
-import { EnvelopeSchema, HarnessCommandSchema, type EventFeed, type HarnessCommand } from '@harness/protocol';
+import { EnvelopeSchema, HarnessCommandSchema, type AppSettings, type EventFeed, type HarnessCommand } from '@harness/protocol';
 import { Color, Mesh, MeshBasicMaterial, RingGeometry, Scene, Vector3, type Camera } from 'three';
 import { Choreographer } from './choreo/choreographer';
 import { OfficeCamera } from './engine/officeCamera';
@@ -8,6 +8,7 @@ import { PixelPipeline } from './engine/pixelPipeline';
 import { Dock } from './hud/dock';
 import { NameTags } from './hud/nameTags';
 import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
+import { SettingsPanel } from './hud/settingsPanel';
 import { TopBar } from './hud/topBar';
 import { SocketFeed, probe } from './net/socketFeed';
 import { MockRun } from './sim/mockRun';
@@ -100,8 +101,25 @@ function toScreen(point: Vector3, camera: Camera): ScreenPoint {
 
 /** Typing an inbox answer must not pan the camera or toggle effects. */
 function isTypingTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
     || (target instanceof HTMLElement && target.isContentEditable);
+}
+
+let appliedAppearance = '';
+/**
+ * Settings' LOOK tab: HUD theme and accent color, plus the pixel-effect and zoom defaults.
+ * Applied only when they change, so P/B/O and zoom keys still work in between.
+ */
+function applyAppearance(appearance: AppSettings['appearance']): void {
+  const signature = JSON.stringify(appearance);
+  if (signature === appliedAppearance) return;
+  appliedAppearance = signature;
+  const root = document.documentElement;
+  root.dataset.hudTheme = appearance.hudTheme;
+  root.style.setProperty('--accent', appearance.accent);
+  Object.assign(pipeline.settings, { palette: appearance.palette, dither: appearance.dither, outline: appearance.outline });
+  setZoom(appearance.zoom);
+  renderHud();
 }
 
 interface InputHandlers {
@@ -259,8 +277,10 @@ async function start(): Promise<void> {
     onToggleFollow: toggleFollow,
   }, feed.isSimulated);
   nameTags.onSelect = select;
+  const settingsPanel = new SettingsPanel(document.body, { send: (command) => sendCommand(feed, command) });
   const topBar = new TopBar(topBarRoot, {
     onOpenInbox: () => dock.openTab('inbox', true),
+    onOpenSettings: () => settingsPanel.open(),
     onStart: (goal) => {
       if (!sendCommand(feed, { type: 'run.start', goal })) topBar.showNotice('Not connected to the harness server.');
     },
@@ -276,7 +296,16 @@ async function start(): Promise<void> {
       renderPanels();
     });
     socket.onAck((ack) => {
-      if (!ack.ok) topBar.showNotice(ack.error ?? 'The server refused that.');
+      if (ack.ok) return;
+      const message = ack.error ?? 'The server refused that.';
+      if (settingsPanel.isOpen) settingsPanel.showError(message);
+      else topBar.showNotice(message);
+    });
+    socket.onProviderTested((result) => settingsPanel.showTest(result));
+    socket.onSettings((snapshot) => {
+      settingsPanel.setSettings(snapshot);
+      applyAppearance(snapshot.settings.appearance);
+      choreographer.setTeamColors(snapshot.settings.team);
     });
   }
 
@@ -311,6 +340,11 @@ async function start(): Promise<void> {
   const panInput = setupInput({
     onClick: (point) => select(pickAt(point)),
     onKey: (key) => {
+      // While Settings is open, Escape closes it and office shortcuts are paused.
+      if (settingsPanel.isOpen) {
+        if (key === 'escape') settingsPanel.close();
+        return true;
+      }
       if (key === 'escape') select(null);
       else if (key === 'f') toggleFollow();
       else if (key === 'i') dock.openTab('inbox', true);

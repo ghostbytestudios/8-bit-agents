@@ -25,6 +25,14 @@ const TAG_ROLE: Record<AgentRole, NameTagRole> = {
 const FIXED_HOME: Partial<Record<AgentRole, string>> = { boss: 'boss', architect: 'whiteboard' };
 const RUN_END_ICONS: Record<RunStatus, string> = { done: '🎉', stopped: '✋', failed: '💥' };
 
+/** The parts of Settings' team section the office uses. */
+export interface TeamColors {
+  boss: { shirt: string; hair: string };
+  architect: { shirt: string; hair: string };
+  /** Index 0 is worker-1. */
+  workerLooks: ReadonlyArray<{ shirt: string; hair: string }>;
+}
+
 const BOSS_LOOK: CharacterLook = { shirt: '#ffffff', pants: '#262b44', skin: '#e8b796', hair: '#3e2731', shoes: '#181425', tie: '#e43b44' };
 const ARCHITECT_LOOK: CharacterLook = { shirt: '#124e89', pants: '#3a4466', skin: '#c28569', hair: '#181425', shoes: '#3e2731' };
 const WORKER_SHIRTS = ['#63c74d', '#e43b44', '#feae34', '#0099db', '#b55088', '#f77622', '#2ce8f5', '#c0cbdc'];
@@ -47,6 +55,8 @@ interface Actor {
   id: string;
   role: AgentRole;
   name: string;
+  /** Built-in look; Settings' shirt and hair colors are layered on top. */
+  baseLook: CharacterLook;
   character: Character;
   home: SpotDef;
   hasEntered: boolean;
@@ -78,9 +88,22 @@ export class Choreographer {
   private readonly entrance: SpotDef;
   private spawnTimer = 0;
   private workerCount = 0;
+  private teamColors = new Map<string, { shirt: string; hair: string }>();
 
   constructor(private readonly options: ChoreographerOptions) {
     this.entrance = this.requireSpot('entrance');
+  }
+
+  /** Applies the team's colors from Settings to everyone, including agents already in the office. */
+  setTeamColors(team: TeamColors): void {
+    this.teamColors = new Map([['boss', team.boss], ['architect', team.architect]]);
+    team.workerLooks.forEach((member, index) => this.teamColors.set(`worker-${index + 1}`, member));
+    for (const actor of this.actors.values()) actor.character.setLook(this.withTeamColors(actor.id, actor.baseLook));
+  }
+
+  private withTeamColors(id: string, base: CharacterLook): CharacterLook {
+    const colors = this.teamColors.get(id);
+    return colors ? { ...base, shirt: colors.shirt, hair: colors.hair } : base;
   }
 
   /** Characters standing in the office (not still queued outside the door), by agent id. */
@@ -189,10 +212,10 @@ export class Choreographer {
       console.warn(`[choreo] no free desk for agent "${id}"; it will appear in the HUD only`);
       return;
     }
-    const look = role === 'boss' ? BOSS_LOOK : role === 'architect' ? ARCHITECT_LOOK : workerLook(this.workerCount++);
+    const baseLook = role === 'boss' ? BOSS_LOOK : role === 'architect' ? ARCHITECT_LOOK : workerLook(this.workerCount++);
     const actor: Actor = {
-      id, role, name, home,
-      character: new Character(look),
+      id, role, name, home, baseLook,
+      character: new Character(this.withTeamColors(id, baseLook)),
       hasEntered: false,
       queue: [],
       current: null,

@@ -91,6 +91,17 @@ describe('AnthropicProvider', () => {
     expect(turn.stop).toBe('refused');
   });
 
+  it('explains a missing key instead of passing the raw SDK error on', async () => {
+    const provider = new AnthropicProvider({
+      id: 'claude',
+      createMessage: async () => {
+        throw new Error('Could not resolve authentication method. Expected one of apiKey');
+      },
+    });
+    const chat = provider.startConversation({ model: 'claude-opus-5-5', system: 's', tools: [] });
+    await expect(chat.send({ text: 'x' })).rejects.toThrow(/add a Claude API key in Settings › Models/);
+  });
+
   it('does not keep a turn in the history when the request fails', async () => {
     const { provider, requests } = recordingProvider([message([{ type: 'text', text: 'ok' }], 'end_turn')]);
     const chat = provider.startConversation({ model: 'claude-opus-5-5', system: 's', tools: [] });

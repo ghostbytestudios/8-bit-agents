@@ -9,6 +9,7 @@ const CONNECTION_LABEL: Record<ConnectionStatus, string> = { connecting: 'CONNEC
 
 export interface TopBarHandlers {
   onOpenInbox(): void;
+  onOpenSettings(): void;
   onStart(goal: string): void;
   onStop(): void;
 }
@@ -40,8 +41,11 @@ export class TopBar {
     const title = mode.isSimulated ? `HARNESS · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}` : 'HARNESS';
     this.alert = button('topbar__alert', '', handlers.onOpenInbox);
     this.stop = button('pixel-button pixel-button--danger', 'STOP', handlers.onStop);
+    const settings = button('pixel-button topbar__settings', '⚙ SETTINGS', handlers.onOpenSettings);
+    // The demo office has no server to save settings to.
+    settings.hidden = mode.isSimulated;
     const line = el('div', 'topbar__line');
-    line.append(el('span', 'topbar__title', title), this.connection, this.status, this.alert);
+    line.append(el('span', 'topbar__title', title), this.connection, this.status, this.alert, settings);
 
     this.input.type = 'text';
     this.input.maxLength = MAX_GOAL_CHARS;

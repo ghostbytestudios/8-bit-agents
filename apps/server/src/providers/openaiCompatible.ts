@@ -49,6 +49,10 @@ const ResponseSchema = z.object({
   }).nullish(),
 });
 
+const ModelListSchema = z.object({ data: z.array(z.object({ id: z.string().min(1).max(128) })) });
+const LIST_TIMEOUT_MS = 15_000;
+const MAX_LISTED_MODELS = 200;
+
 interface WireToolCall {
   id: string;
   type: 'function';
@@ -147,6 +151,7 @@ class ChatConversation implements Conversation {
 export class OpenAICompatibleProvider implements ModelProvider {
   readonly id: string;
   readonly isLocal: boolean;
+  private readonly base: string;
   private readonly endpoint: string;
   private readonly fetch: Fetch;
 
@@ -154,12 +159,31 @@ export class OpenAICompatibleProvider implements ModelProvider {
     this.id = options.id;
     const base = new URL(options.baseUrl);
     this.isLocal = LOOPBACK_HOSTS.has(base.hostname);
-    this.endpoint = `${options.baseUrl.replace(/\/+$/, '')}/chat/completions`;
+    this.base = options.baseUrl.replace(/\/+$/, '');
+    this.endpoint = `${this.base}/chat/completions`;
     this.fetch = options.fetch ?? fetch;
   }
 
   startConversation(options: ConversationOptions): Conversation {
     return new ChatConversation(this, options);
+  }
+
+  async listModels(signal?: AbortSignal): Promise<string[]> {
+    const timeout = AbortSignal.timeout(LIST_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await this.fetch(`${this.base}/models`, {
+        headers: this.options.apiKey ? { authorization: `Bearer ${this.options.apiKey}` } : {},
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      });
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      throw new ProviderError(`Couldn't reach "${this.id}" at ${this.options.baseUrl}. Is the model server running?`, true);
+    }
+    if (!response.ok) throw await this.httpError(response, 'models');
+    const parsed = ModelListSchema.safeParse(await response.json().catch(() => null));
+    if (!parsed.success) throw new ProviderError(`"${this.id}" answered, but not with an OpenAI-compatible model list.`);
+    return parsed.data.data.map((model) => model.id).slice(0, MAX_LISTED_MODELS);
   }
 
   costUsd(model: string, inputTokens: number, outputTokens: number): number {

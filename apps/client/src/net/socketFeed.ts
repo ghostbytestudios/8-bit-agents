@@ -1,4 +1,12 @@
-import { ServerMessageSchema, type ClientMessage, type EventFeed, type HarnessCommand } from '@harness/protocol';
+import {
+  ServerMessageSchema,
+  type AppSettings,
+  type ClientMessage,
+  type EventFeed,
+  type HarnessCommand,
+  type KeyStatus,
+  type ServerMessage,
+} from '@harness/protocol';
 
 /**
  * The live feed: a WebSocket to the harness server. Every server message is validated;
@@ -16,6 +24,13 @@ export interface Ack {
   ok: boolean;
   error?: string;
 }
+
+export interface SettingsSnapshot {
+  settings: AppSettings;
+  keys: KeyStatus;
+}
+
+export type ProviderTestResult = Extract<ServerMessage, { type: 'provider.tested' }>;
 
 /** Just the part of the browser WebSocket this feed uses (a seam for tests). */
 export interface SocketLike {
@@ -39,6 +54,9 @@ export class SocketFeed implements EventFeed {
   private readonly listeners = new Set<(raw: unknown) => void>();
   private readonly statusListeners = new Set<(status: ConnectionStatus) => void>();
   private readonly ackListeners = new Set<(ack: Ack) => void>();
+  private readonly settingsListeners = new Set<(snapshot: SettingsSnapshot) => void>();
+  private readonly testListeners = new Set<(result: ProviderTestResult) => void>();
+  private latestSettings: SettingsSnapshot | null = null;
   private status: ConnectionStatus = 'connecting';
 
   constructor(private readonly url: string, private readonly createSocket: SocketFactory = defaultFactory) {}
@@ -81,6 +99,18 @@ export class SocketFeed implements EventFeed {
     return () => this.ackListeners.delete(listener);
   }
 
+  /** Called with the current settings right away (if known) and on every change. */
+  onSettings(listener: (snapshot: SettingsSnapshot) => void): () => void {
+    this.settingsListeners.add(listener);
+    if (this.latestSettings) listener(this.latestSettings);
+    return () => this.settingsListeners.delete(listener);
+  }
+
+  onProviderTested(listener: (result: ProviderTestResult) => void): () => void {
+    this.testListeners.add(listener);
+    return () => this.testListeners.delete(listener);
+  }
+
   /** Sends a command; false (and nothing sent) while disconnected. */
   send(command: HarnessCommand): boolean {
     if (this.socket?.readyState !== OPEN) return false;
@@ -116,6 +146,13 @@ export class SocketFeed implements EventFeed {
         return;
       case 'ack':
         for (const listener of this.ackListeners) listener(message);
+        return;
+      case 'settings':
+        this.latestSettings = { settings: message.settings, keys: message.keys };
+        for (const listener of this.settingsListeners) listener(this.latestSettings);
+        return;
+      case 'provider.tested':
+        for (const listener of this.testListeners) listener(message);
         return;
     }
   }

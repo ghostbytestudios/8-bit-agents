@@ -63,6 +63,16 @@ export const HarnessConfigSchema = z.object({
 });
 
 export type HarnessConfig = z.infer<typeof HarnessConfigSchema>;
+
+export interface TeamNames {
+  boss: string;
+  architect: string;
+  /** Index 0 is worker-1. */
+  workers: readonly string[];
+}
+
+/** What one run needs: who plays each role, the team size and names, and the limits. */
+export type RunConfig = Pick<HarnessConfig, 'roles' | 'workers' | 'limits'> & { names?: TeamNames };
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export type RoleConfig = z.infer<typeof RoleSchema>;
 export type RoleName = keyof HarnessConfig['roles'];

@@ -68,6 +68,8 @@ export interface ModelProvider {
   /** Runs on this machine (no per-token bill). */
   readonly isLocal: boolean;
   startConversation(options: ConversationOptions): Conversation;
+  /** Model ids this provider offers; also how "Test connection" proves the key and URL work. */
+  listModels(signal?: AbortSignal): Promise<string[]>;
 }
 
 /** A model call failed in a way the user should hear about (bad key, server down, refusal). */

@@ -64,7 +64,108 @@ export const EnvelopeSchema = z.object({
   event: HarnessEventSchema,
 });
 
+// ── Settings (the desktop app's settings screen) ─────────────────────────────
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'a color like #63c74d');
+const agentName = z.string().trim().min(1).max(20);
+const providerId = z.string().regex(/^[a-z0-9-]{1,32}$/, 'lowercase letters, digits and dashes');
+
+export const ProviderPresetSchema = z.enum(['claude', 'openai', 'openrouter', 'groq', 'ollama', 'lmstudio', 'custom']);
+export type ProviderPreset = z.infer<typeof ProviderPresetSchema>;
+
+export interface PresetInfo {
+  label: string;
+  kind: 'anthropic' | 'openai-compatible';
+  /** Fixed endpoint; null means the user types one (custom) or the SDK knows it (Claude). */
+  baseUrl: string | null;
+  needsKey: boolean;
+  /** Where to create a key, shown next to the key field. */
+  keyUrl: string | null;
+  /** Suggested model ids until "Test connection" lists the real ones. */
+  models: readonly string[];
+}
+
+export const PROVIDER_PRESETS: Readonly<Record<ProviderPreset, PresetInfo>> = {
+  claude: { label: 'Claude', kind: 'anthropic', baseUrl: null, needsKey: true, keyUrl: 'https://console.anthropic.com/settings/keys', models: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'] },
+  openai: { label: 'OpenAI', kind: 'openai-compatible', baseUrl: 'https://api.openai.com/v1', needsKey: true, keyUrl: 'https://platform.openai.com/api-keys', models: [] },
+  openrouter: { label: 'OpenRouter', kind: 'openai-compatible', baseUrl: 'https://openrouter.ai/api/v1', needsKey: true, keyUrl: 'https://openrouter.ai/keys', models: [] },
+  groq: { label: 'Groq', kind: 'openai-compatible', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, keyUrl: 'https://console.groq.com/keys', models: [] },
+  ollama: { label: 'Ollama (local)', kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:11434/v1', needsKey: false, keyUrl: null, models: ['qwen2.5-coder:14b'] },
+  lmstudio: { label: 'LM Studio (local)', kind: 'openai-compatible', baseUrl: 'http://127.0.0.1:1234/v1', needsKey: false, keyUrl: null, models: [] },
+  custom: { label: 'Custom (OpenAI-compatible)', kind: 'openai-compatible', baseUrl: null, needsKey: false, keyUrl: null, models: [] },
+};
+
+export const ProviderSettingsSchema = z.object({
+  id: providerId,
+  preset: ProviderPresetSchema,
+  label: z.string().trim().min(1).max(40),
+  /** Only for the custom preset. */
+  baseUrl: z.url({ protocol: /^https?$/ }).optional(),
+});
+
+export const RoleSettingsSchema = z.object({
+  provider: providerId,
+  model: z.string().trim().min(1).max(128),
+  effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
+});
+
+export const TeamMemberSchema = z.object({ name: agentName, shirt: hexColor, hair: hexColor });
+
+export const AppSettingsSchema = z.object({
+  version: z.literal(1),
+  providers: z.array(ProviderSettingsSchema).min(1).max(12),
+  roles: z.object({ boss: RoleSettingsSchema, architect: RoleSettingsSchema, worker: RoleSettingsSchema }),
+  team: z.object({
+    workers: z.number().int().min(1).max(8),
+    boss: TeamMemberSchema,
+    architect: TeamMemberSchema,
+    /** One entry per worker seat (index 0 = worker-1). */
+    workerLooks: z.array(TeamMemberSchema).length(8),
+  }),
+  appearance: z.object({
+    hudTheme: z.enum(['night', 'day', 'contrast']),
+    accent: hexColor,
+    palette: z.boolean(),
+    dither: z.boolean(),
+    outline: z.boolean(),
+    zoom: z.number().int().min(1).max(4),
+  }),
+  limits: z.object({
+    maxRunCostUsd: z.number().positive().max(1_000),
+    maxRunTokens: z.number().int().positive().max(1_000_000_000),
+    maxTurnsPerTask: z.number().int().min(1).max(200),
+    maxTasks: z.number().int().min(1).max(100),
+    maxRounds: z.number().int().min(1).max(10),
+  }),
+  /** Folder the agents work in. */
+  workspace: z.string().trim().min(1).max(500),
+}).superRefine((settings, context) => {
+  const ids = settings.providers.map((provider) => provider.id);
+  ids.forEach((id, index) => {
+    if (ids.indexOf(id) !== index) context.addIssue({ code: 'custom', path: ['providers', index, 'id'], message: `duplicate provider "${id}"` });
+  });
+  settings.providers.forEach((provider, index) => {
+    if (provider.preset === 'custom' && !provider.baseUrl) context.addIssue({ code: 'custom', path: ['providers', index, 'baseUrl'], message: 'a custom provider needs a URL' });
+  });
+  for (const [role, { provider }] of Object.entries(settings.roles)) {
+    if (!ids.includes(provider)) context.addIssue({ code: 'custom', path: ['roles', role, 'provider'], message: `no provider "${provider}"` });
+  }
+});
+
+/** What the UI may know about a stored key: whether it exists and its last 4 characters. Never the key. */
+export const KeyStatusSchema = z.record(providerId, z.object({ isSet: z.boolean(), last4: z.string().max(4).optional() }));
+
+export type AppSettings = z.infer<typeof AppSettingsSchema>;
+export type ProviderSettings = z.infer<typeof ProviderSettingsSchema>;
+export type TeamMember = z.infer<typeof TeamMemberSchema>;
+export type KeyStatus = z.infer<typeof KeyStatusSchema>;
+
 export const HarnessCommandSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('settings.update'), settings: AppSettingsSchema }),
+  /** Keys travel browser → server once and are never sent back. */
+  z.object({ type: z.literal('provider.setKey'), providerId, key: z.string().trim().min(8).max(500) }),
+  z.object({ type: z.literal('provider.clearKey'), providerId }),
+  z.object({ type: z.literal('provider.test'), providerId }),
   z.object({ type: z.literal('run.start'), goal: z.string().min(1).max(MAX_TEXT) }),
   z.object({ type: z.literal('run.stop'), runId: id }),
   z.object({ type: z.literal('human.respond'), requestId: id, answer: text }),
@@ -83,6 +184,16 @@ export const ServerMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('replay'), envelopes: z.array(EnvelopeSchema).max(MAX_REPLAY_EVENTS) }),
   z.object({ type: z.literal('event'), envelope: EnvelopeSchema }),
   z.object({ type: z.literal('ack'), commandId: id, ok: z.boolean(), error: z.string().max(500).optional() }),
+  /** Current settings; sent after hello and whenever they change. */
+  z.object({ type: z.literal('settings'), settings: AppSettingsSchema, keys: KeyStatusSchema }),
+  /** Result of "Test connection", with the models the provider offers. */
+  z.object({
+    type: z.literal('provider.tested'),
+    providerId,
+    ok: z.boolean(),
+    detail: z.string().max(500),
+    models: z.array(z.string().max(128)).max(500),
+  }),
 ]);
 
 /** Browser → server. `commandId` lets the server acknowledge (or reject) each command. */

@@ -52,7 +52,7 @@ function attachClient(socket: WebSocket, hub: RunHub, log: Pick<Console, 'warn'>
   let windowStart = Date.now();
   let messagesInWindow = 0;
 
-  socket.on('message', (data: RawData, isBinary: boolean) => {
+  socket.on('message', async (data: RawData, isBinary: boolean) => {
     if (isBinary) {
       socket.close(CLOSE_UNSUPPORTED, 'text only');
       return;
@@ -78,7 +78,7 @@ function attachClient(socket: WebSocket, hub: RunHub, log: Pick<Console, 'warn'>
       log.warn('[ws] ignored an invalid command', parsed.error.issues.slice(0, 3));
       return;
     }
-    const outcome = hub.handle(parsed.data.command);
+    const outcome = await hub.handle(parsed.data.command, send);
     send({ type: 'ack', commandId: parsed.data.commandId, ok: outcome.ok, ...(outcome.error ? { error: outcome.error } : {}) });
   });
   socket.on('close', detach);

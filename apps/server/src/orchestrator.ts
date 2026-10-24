@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { MAX_TEXT, type AgentRole, type HarnessEvent, type HumanInputKind, type TaskState } from '@harness/protocol';
 import { clip, runAgent, type AgentLoopResult } from './agentLoop';
-import type { HarnessConfig, RoleName } from './config';
+import type { RoleName, RunConfig } from './config';
 import { ARCHITECT_PROMPT, BOSS_PROMPT, WORKER_PROMPT, architectBrief, bossBrief, roundReport, workerBrief } from './prompts';
 import type { Conversation, ModelProvider, ToolResult, TurnInput, TurnUsage } from './providers/types';
 import { ARCHITECT_TOOLS, BOSS_TOOLS, WORKER_TOOLS, toolSpecs, type NewTask, type RunPort, type ToolDef } from './tools';
@@ -35,7 +35,7 @@ interface PendingQuestion {
 }
 
 export interface RunDeps {
-  config: HarnessConfig;
+  config: RunConfig;
   providers: ReadonlyMap<string, ModelProvider>;
   workspace: Workspace;
   emit(event: HarnessEvent): void;
@@ -118,9 +118,18 @@ export class Run implements RunPort {
       const { provider, model } = this.deps.config.roles[roleName];
       this.emit({ type: 'agent.spawned', agentId, role, name, model, provider });
     };
-    spawn(BOSS_ID, 'boss', 'boss', 'BOSS');
-    spawn(ARCHITECT_ID, 'architect', 'architect', 'ARCHITECT');
-    this.workerIds.forEach((agentId, index) => spawn(agentId, 'worker', 'worker', `WORKER ${index + 1}`));
+    spawn(BOSS_ID, 'boss', 'boss', this.nameOf(BOSS_ID));
+    spawn(ARCHITECT_ID, 'architect', 'architect', this.nameOf(ARCHITECT_ID));
+    this.workerIds.forEach((agentId) => spawn(agentId, 'worker', 'worker', this.nameOf(agentId)));
+  }
+
+  /** The name you gave this agent in Settings, or its default. */
+  private nameOf(agentId: string): string {
+    const names = this.deps.config.names;
+    if (agentId === BOSS_ID) return names?.boss ?? 'BOSS';
+    if (agentId === ARCHITECT_ID) return names?.architect ?? 'ARCHITECT';
+    const index = this.workerIds.indexOf(agentId);
+    return names?.workers[index] ?? `WORKER ${index + 1}`;
   }
 
   private async planPhase(): Promise<void> {
@@ -251,7 +260,7 @@ export class Run implements RunPort {
     this.architectAnswer = null;
     const result = await this.loop(ARCHITECT_ID, this.architectChat, 'architect', ['answer'], {
       toolResults: this.architectOwed,
-      text: `${agentId.toUpperCase()} asks: ${question}\nReply with the answer tool.`,
+      text: `${this.nameOf(agentId)} asks: ${question}\nReply with the answer tool.`,
     });
     this.architectOwed = result.pendingResults;
     const reply = this.architectAnswer ?? '(no answer)';

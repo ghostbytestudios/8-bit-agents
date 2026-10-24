@@ -38,6 +38,7 @@ const FALLBACK_MODELS = new Set(['claude-fable-5-1', 'claude-opus-5-5', 'claude-
 const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 /** Non-streaming requests stay under the SDK's HTTP timeout at this size. */
 const MAX_OUTPUT_TOKENS = 16_000;
+const MAX_LISTED_MODELS = 200;
 
 export function claudeCostUsd(model: string, usage: Anthropic.Beta.BetaUsage): number {
   const cacheRead = usage.cache_read_input_tokens ?? 0;
@@ -106,7 +107,13 @@ function toProviderError(error: unknown, model: string): Error {
   if (error instanceof Anthropic.APIError) {
     return new ProviderError(`Claude API error ${error.status ?? ''}: ${error.message}`.trim(), (error.status ?? 500) >= 500);
   }
-  return error instanceof Error ? error : new Error(String(error));
+  // Errors from outside the SDK's typed hierarchy happen before any request is sent,
+  // most often because no credentials were found.
+  if (!(error instanceof Anthropic.AnthropicError)) {
+    const detail = error instanceof Error ? error.message.split('.')[0] : String(error);
+    return new ProviderError(`Claude couldn't send the request (${detail}). If you haven't yet, add a Claude API key in Settings › Models.`);
+  }
+  return error;
 }
 
 class ClaudeConversation implements Conversation {
@@ -153,12 +160,15 @@ export interface AnthropicProviderOptions {
   apiKey?: string;
   /** Test seam: replaces the real API call. */
   createMessage?: CreateMessage;
+  /** Test seam: replaces the models listing. */
+  listModels?: (signal?: AbortSignal) => Promise<string[]>;
 }
 
 export class AnthropicProvider implements ModelProvider {
   readonly id: string;
   readonly isLocal = false;
   private create: CreateMessage | null;
+  private sdk: Anthropic | null = null;
 
   constructor(private readonly options: AnthropicProviderOptions) {
     this.id = options.id;
@@ -169,12 +179,31 @@ export class AnthropicProvider implements ModelProvider {
     return new ClaudeConversation(options, () => this.createMessage());
   }
 
+  async listModels(signal?: AbortSignal): Promise<string[]> {
+    if (this.options.listModels) return this.options.listModels(signal);
+    const ids: string[] = [];
+    try {
+      for await (const model of this.client().models.list({ limit: 100 }, { signal })) {
+        ids.push(model.id);
+        if (ids.length >= MAX_LISTED_MODELS) break;
+      }
+    } catch (error) {
+      throw toProviderError(error, 'models');
+    }
+    return ids;
+  }
+
   /** The client is built on first use, so a missing key fails the run (visibly) instead of the server. */
   private createMessage(): CreateMessage {
     if (!this.create) {
-      const client = new Anthropic(this.options.apiKey ? { apiKey: this.options.apiKey } : {});
+      const client = this.client();
       this.create = (params, requestOptions) => client.beta.messages.create(params, requestOptions);
     }
     return this.create;
+  }
+
+  private client(): Anthropic {
+    this.sdk ??= new Anthropic(this.options.apiKey ? { apiKey: this.options.apiKey } : {});
+    return this.sdk;
   }
 }
