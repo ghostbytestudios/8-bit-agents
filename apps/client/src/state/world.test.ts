@@ -119,6 +119,18 @@ describe('reduceWorld', () => {
     expect(state.inbox.get('r1')?.requestedAt).toBeGreaterThan(0);
   });
 
+  it('tracks the run goal from start to finish', () => {
+    const running = play([{ type: 'run.started', goal: 'Build a todo app' }]);
+    expect(running.run).toEqual({ goal: 'Build a todo app', status: 'running', summary: '' });
+    const done = play([{ type: 'run.finished', status: 'done', summary: 'Shipped' }], running);
+    expect(done.run).toEqual({ goal: 'Build a todo app', status: 'done', summary: 'Shipped' });
+  });
+
+  it('remembers which provider runs each agent', () => {
+    const state = play([{ type: 'agent.spawned', agentId: 'w1', role: 'worker', name: 'W1', model: 'qwen', provider: 'ollama' }]);
+    expect(state.agents.get('w1')?.provider).toBe('ollama');
+  });
+
   it('starts fresh when a new run begins', () => {
     const state = play([spawnBoss]);
     const next = reduceWorld(state, envelope({ type: 'task.created', taskId: 't9', title: 'New run' }, 'run-b'));

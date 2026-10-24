@@ -1,4 +1,4 @@
-import type { AgentRole, HarnessEvent } from '@harness/protocol';
+import type { AgentRole, HarnessEvent, RunStatus } from '@harness/protocol';
 import type { Scene, Vector3 } from 'three';
 import { Character, type CharacterLook } from '../actors/character';
 import type { NameTagRole, NameTags } from '../hud/nameTags';
@@ -23,6 +23,7 @@ const TAG_ROLE: Record<AgentRole, NameTagRole> = {
   boss: 'boss', architect: 'architect', worker: 'worker', reviewer: 'worker', researcher: 'worker',
 };
 const FIXED_HOME: Partial<Record<AgentRole, string>> = { boss: 'boss', architect: 'whiteboard' };
+const RUN_END_ICONS: Record<RunStatus, string> = { done: '🎉', stopped: '✋', failed: '💥' };
 
 const BOSS_LOOK: CharacterLook = { shirt: '#ffffff', pants: '#262b44', skin: '#e8b796', hair: '#3e2731', shoes: '#181425', tie: '#e43b44' };
 const ARCHITECT_LOOK: CharacterLook = { shirt: '#124e89', pants: '#3a4466', skin: '#c28569', hair: '#181425', shoes: '#3e2731' };
@@ -156,6 +157,12 @@ export class Choreographer {
         return;
       case 'log':
         if (event.level === 'error') this.options.overlay.flashIcon(event.agentId, '⚠️', FLASH_SECONDS);
+        return;
+      case 'run.started':
+        this.options.overlay.say('boss', `🎯 ${event.goal}`, BUBBLE_SECONDS * 2);
+        return;
+      case 'run.finished':
+        this.options.overlay.say('boss', `${RUN_END_ICONS[event.status]} ${event.summary}`, BUBBLE_SECONDS * 3);
         return;
       case 'task.created':
       case 'task.updated':

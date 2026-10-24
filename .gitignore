@@ -28,3 +28,8 @@ dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local harness config (may name key env vars) and the agents' working folder
+/harness.config.json
+/workspace/
+/.harness/

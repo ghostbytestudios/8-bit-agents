@@ -33,6 +33,15 @@ export function conversationFor(messages: readonly ChatLine[], agentId: string, 
   return messages.filter((line) => line.from === agentId || line.to === agentId).slice(-limit);
 }
 
+/** Longest goal the top bar accepts; well under the protocol's text limit. */
+export const MAX_GOAL_CHARS = 4_000;
+
+/** Cleans up a typed goal; null means there is nothing to start. */
+export function normalizeGoal(raw: string): string | null {
+  const goal = raw.trim().slice(0, MAX_GOAL_CHARS);
+  return goal.length > 0 ? goal : null;
+}
+
 /** Cleans up a typed answer; null means there is nothing worth sending. */
 export function normalizeAnswer(raw: string): string | null {
   const answer = raw.replace(/\s+/g, ' ').trim().slice(0, MAX_ANSWER_CHARS);

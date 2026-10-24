@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatLine, TaskInfo } from '../state/world';
-import { conversationFor, formatAgo, formatCost, formatTokens, normalizeAnswer, tasksByColumn } from './format';
+import { conversationFor, formatAgo, formatCost, formatTokens, normalizeAnswer, normalizeGoal, tasksByColumn } from './format';
 
 describe('formatCost', () => {
   it('marks simulated spend so it is never mistaken for a real bill', () => {
@@ -48,6 +48,14 @@ describe('conversationFor', () => {
   it('keeps only lines the agent sent or received, newest last, capped', () => {
     const lines = [line('a', 'b', '1'), line('c', 'd', '2'), line('b', 'a', '3'), line('a', 'c', '4')];
     expect(conversationFor(lines, 'a', 2).map((chat) => chat.text)).toEqual(['3', '4']);
+  });
+});
+
+describe('normalizeGoal', () => {
+  it('trims, rejects empty goals and caps very long ones', () => {
+    expect(normalizeGoal('  Build a todo app ')).toBe('Build a todo app');
+    expect(normalizeGoal('   ')).toBeNull();
+    expect(normalizeGoal('x'.repeat(9_000))).toHaveLength(4_000);
   });
 });
 

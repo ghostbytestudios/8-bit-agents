@@ -1,4 +1,4 @@
-import type { AgentRole, AgentStatus, Envelope, HumanInputKind, TaskState } from '@harness/protocol';
+import type { AgentRole, AgentStatus, Envelope, HumanInputKind, RunStatus, TaskState } from '@harness/protocol';
 
 /**
  * The exact state of the run, rebuilt from events. The HUD reads this; the office
@@ -9,6 +9,8 @@ export interface AgentInfo {
   role: AgentRole;
   name: string;
   model: string;
+  /** Configured provider ("claude", "ollama", …); null for sources that don't say. */
+  provider: string | null;
   status: AgentStatus;
   currentTool: string | null;
   taskId: string | null;
@@ -63,9 +65,16 @@ export interface PlanInfo {
   ts: number;
 }
 
+export interface RunInfo {
+  goal: string;
+  status: 'running' | RunStatus;
+  summary: string;
+}
+
 export interface WorldState {
   runId: string | null;
   lastSeq: number;
+  run: RunInfo | null;
   agents: ReadonlyMap<string, AgentInfo>;
   tasks: ReadonlyMap<string, TaskInfo>;
   inbox: ReadonlyMap<string, InboxRequest>;
@@ -82,6 +91,7 @@ const MAX_TOOL_HISTORY = 8;
 export const EMPTY_WORLD: WorldState = {
   runId: null,
   lastSeq: 0,
+  run: null,
   agents: new Map(),
   tasks: new Map(),
   inbox: new Map(),
@@ -134,11 +144,15 @@ export function reduceWorld(state: WorldState, envelope: Envelope): WorldState {
   const event = envelope.event;
 
   switch (event.type) {
+    case 'run.started':
+      return { ...next, run: { goal: event.goal, status: 'running', summary: '' } };
+    case 'run.finished':
+      return { ...next, run: { goal: next.run?.goal ?? '', status: event.status, summary: event.summary } };
     case 'agent.spawned':
       return {
         ...next,
         agents: withEntry(next.agents, event.agentId, {
-          id: event.agentId, role: event.role, name: event.name, model: event.model,
+          id: event.agentId, role: event.role, name: event.name, model: event.model, provider: event.provider ?? null,
           status: 'idle', currentTool: null, taskId: null, costUsd: 0, tokens: 0, recentTools: [],
         }),
       };

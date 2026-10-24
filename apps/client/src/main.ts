@@ -5,11 +5,11 @@ import { Choreographer } from './choreo/choreographer';
 import { OfficeCamera } from './engine/officeCamera';
 import { ENDESGA_32, createPaletteTexture } from './engine/palette';
 import { PixelPipeline } from './engine/pixelPipeline';
-import { button, el } from './hud/dom';
 import { Dock } from './hud/dock';
-import { formatCost } from './hud/format';
 import { NameTags } from './hud/nameTags';
 import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
+import { TopBar } from './hud/topBar';
+import { SocketFeed, probe } from './net/socketFeed';
 import { MockRun } from './sim/mockRun';
 import { WorldStore } from './state/world';
 import { Crowd } from './world/crowd';
@@ -25,8 +25,10 @@ const WHEEL_STEP = 50;
 const PAN_SPEED = 6;
 const MAX_FRAME_DT = 0.1;
 const DOOR_OUTSIDE = new Vector3(FRONT_DOOR_OUTSIDE.x, 0, FRONT_DOOR_OUTSIDE.z);
-/** True while the office is driven by the in-browser mock rather than real agents. */
-const IS_SIMULATED = true;
+/** The harness server, through the Vite dev proxy (same origin as this page). */
+const SERVER_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+/** How long to wait for the server before falling back to the in-browser mock. */
+const PROBE_TIMEOUT_MS = 1_500;
 /** A press that moves less than this (screen px) is a click, not a pan. */
 const CLICK_SLOP_PX = 4;
 /** How close (in game pixels) a click must land to a character's body to pick it. */
@@ -43,7 +45,7 @@ function requireElement<T extends HTMLElement>(selector: string): T {
 
 const canvas = requireElement<HTMLCanvasElement>('#game');
 const hud = requireElement<HTMLElement>('#hud');
-const topBar = requireElement<HTMLElement>('#topbar');
+const topBarRoot = requireElement<HTMLElement>('#topbar');
 
 const pipeline = new PixelPipeline(canvas, createPaletteTexture(ENDESGA_32), ENDESGA_32.length);
 const officeCamera = new OfficeCamera({ pixelsPerUnit: PIXELS_PER_UNIT, yawDeg: 28, pitchDeg: 58, distance: 40 });
@@ -88,22 +90,6 @@ function renderHud(): void {
     `<kbd>O</kbd> OUTLINE ${flag(outline)} · <kbd>N</kbd> NAMES ${flag(nameTags.visible)}`,
     '<kbd>SPACE</kbd> CENTER',
   ].join('<br>');
-}
-
-/** Run status comes straight from the world store (exact), not from the animation. */
-function createTopBar(onOpenInbox: () => void): () => void {
-  const title = el('span', 'topbar__title', IS_SIMULATED ? 'HARNESS · MOCK RUN' : 'HARNESS');
-  const status = el('span', 'topbar__status');
-  const alert = button('topbar__alert', '', onOpenInbox);
-  topBar.append(title, status, alert);
-  return () => {
-    const { agents, tasks, inbox, totalCostUsd } = world.state;
-    const done = [...tasks.values()].filter((task) => task.state === 'done').length;
-    // The mock invents token usage; never let a fake number look like a real bill.
-    status.textContent = `AGENTS ${agents.size} · TASKS ${done}/${tasks.size} · ${formatCost(totalCostUsd, IS_SIMULATED)}`;
-    alert.hidden = inbox.size === 0;
-    alert.textContent = `❗ ${inbox.size} WAITING ON YOU`;
-  };
 }
 
 function toScreen(point: Vector3, camera: Camera): ScreenPoint {
@@ -206,14 +192,30 @@ function createSelectionRing(): Mesh {
   return ring;
 }
 
-/** Commands leave through the same schema the backend will enforce. */
-function sendCommand(feed: EventFeed, command: HarnessCommand): void {
+/** Commands leave through the same schema the backend will enforce; false if nothing was sent. */
+function sendCommand(feed: EventFeed, command: HarnessCommand): boolean {
   const parsed = HarnessCommandSchema.safeParse(command);
   if (!parsed.success) {
     console.warn('[feed] refused to send invalid command', parsed.error.issues);
-    return;
+    return false;
   }
-  feed.send(parsed.data);
+  return feed.send(parsed.data);
+}
+
+interface FeedChoice {
+  feed: EventFeed;
+  socket: SocketFeed | null;
+  mock: MockRun | null;
+  isServerOffline: boolean;
+}
+
+/** The live server when one answers; otherwise (or with ?mock) the in-browser mock run. */
+async function chooseFeed(): Promise<FeedChoice> {
+  const wantsMock = new URLSearchParams(location.search).has('mock');
+  const socket = wantsMock ? null : await probe(SERVER_URL, PROBE_TIMEOUT_MS);
+  if (socket) return { feed: socket, socket, mock: null, isServerOffline: false };
+  const mock = new MockRun();
+  return { feed: mock, socket: null, mock, isServerOffline: !wantsMock };
 }
 
 async function start(): Promise<void> {
@@ -224,7 +226,7 @@ async function start(): Promise<void> {
   const choreographer = new Choreographer({ scene, crowd, spots: office.spots, overlay: nameTags, doorOutside: DOOR_OUTSIDE });
   const ring = createSelectionRing();
   scene.add(ring);
-  const feed = new MockRun();
+  const { feed, socket, mock, isServerOffline } = await chooseFeed();
 
   let selectedId: string | null = null;
   let isRenderQueued = false;
@@ -234,7 +236,7 @@ async function start(): Promise<void> {
     isRenderQueued = true;
     requestAnimationFrame(() => {
       isRenderQueued = false;
-      renderTopBar();
+      topBar.render(world.state);
       dock.render(world.state, Date.now());
     });
   };
@@ -255,9 +257,28 @@ async function start(): Promise<void> {
     onSelectAgent: select,
     onCloseInspector: () => select(null),
     onToggleFollow: toggleFollow,
-  }, IS_SIMULATED);
+  }, feed.isSimulated);
   nameTags.onSelect = select;
-  const renderTopBar = createTopBar(() => dock.openTab('inbox', true));
+  const topBar = new TopBar(topBarRoot, {
+    onOpenInbox: () => dock.openTab('inbox', true),
+    onStart: (goal) => {
+      if (!sendCommand(feed, { type: 'run.start', goal })) topBar.showNotice('Not connected to the harness server.');
+    },
+    onStop: () => {
+      const { runId } = world.state;
+      if (runId) sendCommand(feed, { type: 'run.stop', runId });
+    },
+  }, { isSimulated: feed.isSimulated, isServerOffline });
+  if (socket) {
+    topBar.setConnection(socket.connection);
+    socket.onStatus((status) => {
+      topBar.setConnection(status);
+      renderPanels();
+    });
+    socket.onAck((ack) => {
+      if (!ack.ok) topBar.showNotice(ack.error ?? 'The server refused that.');
+    });
+  }
 
   // The feed is the system boundary: everything is validated before it touches state.
   feed.subscribe((raw) => {
@@ -272,7 +293,10 @@ async function start(): Promise<void> {
   world.subscribe(renderPanels);
   setInterval(renderPanels, AGE_REFRESH_MS);
   renderPanels();
-  feed.start();
+  mock?.start();
+  world.subscribe((state) => {
+    if (state.run?.status === 'running') topBar.clearGoal();
+  });
 
   const scratch = new Vector3();
   const pickAt = (point: ScreenPoint): string | null => {

@@ -44,6 +44,7 @@ const pickSome = <T>(items: readonly T[], count: number): T[] =>
   [...items].sort(() => Math.random() - 0.5).slice(0, count);
 
 export class MockRun implements EventFeed {
+  readonly isSimulated = true;
   private readonly listeners = new Set<(raw: unknown) => void>();
   private readonly runId = `mock-${Date.now().toString(36)}`;
   private readonly pendingAnswers = new Map<string, (answer: string) => void>();
@@ -60,8 +61,9 @@ export class MockRun implements EventFeed {
     return () => this.listeners.delete(listener);
   }
 
-  send(command: HarnessCommand): void {
+  send(command: HarnessCommand): boolean {
     if (command.type === 'human.respond') this.pendingAnswers.get(command.requestId)?.(command.answer);
+    return true;
   }
 
   start(): void {
@@ -115,6 +117,7 @@ export class MockRun implements EventFeed {
   }
 
   private async script(): Promise<void> {
+    this.emit({ type: 'run.started', goal: 'Build a todo app (simulated)' });
     this.emit({ type: 'agent.spawned', agentId: 'boss', role: 'boss', name: 'BOSS', model: 'claude-opus-5-5' });
     await this.sleep(1.2);
     this.emit({ type: 'agent.spawned', agentId: 'architect', role: 'architect', name: 'ARCHITECT', model: 'claude-opus-5-5' });

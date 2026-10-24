@@ -340,9 +340,8 @@ button.name-tag:focus-visible {
   top: 12px;
   left: 12px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
+  flex-direction: column;
+  gap: 6px;
   max-width: calc(100vw - 372px);
   padding: 8px 12px;
   font-size: 9px;
@@ -355,6 +354,74 @@ button.name-tag:focus-visible {
 
 .topbar__title {
   color: var(--accent);
+}
+
+.topbar__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.topbar__connection {
+  font-size: 7px;
+  color: var(--off);
+}
+
+.topbar__connection[data-status='live'] {
+  color: var(--worker);
+}
+
+.topbar__connection[data-status='reconnecting'] {
+  color: var(--danger);
+}
+
+.topbar__goal {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
+
+.topbar__goal[hidden],
+.topbar__form[hidden],
+.topbar__notice[hidden],
+.topbar__connection[hidden],
+.pixel-button[hidden] {
+  display: none;
+}
+
+.topbar__goal[data-status='done'] {
+  color: var(--worker);
+}
+
+.topbar__goal[data-status='failed'] {
+  color: var(--danger);
+}
+
+.topbar__form {
+  display: flex;
+  gap: 6px;
+}
+
+.topbar__form .pixel-input {
+  min-width: 260px;
+}
+
+.topbar__form.is-disabled {
+  opacity: 0.5;
+}
+
+.topbar__notice {
+  margin: 0;
+  font-size: 7px;
+  color: var(--danger);
+}
+
+.pixel-button--danger {
+  color: #ffffff;
+  background: var(--danger);
 }
 
 .topbar__alert {
@@ -575,6 +642,8 @@ button.name-tag:focus-visible {
   font-size: 8px;
   line-height: 1.7;
   overflow-wrap: anywhere;
+  /* Show prompts exactly as sent: line breaks in an approval are never collapsed away. */
+  white-space: pre-wrap;
 }
 
 .inbox-card__options,

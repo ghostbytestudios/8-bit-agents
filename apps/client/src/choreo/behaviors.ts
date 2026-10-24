@@ -13,11 +13,15 @@ export interface ToolBehavior {
   verb: string;
 }
 
+// Claude Code's tool names, plus the harness server's own agent tools (snake_case).
 const TOOL_RULES: ReadonlyArray<{ match: RegExp; behavior: ToolBehavior }> = [
-  { match: /^(Write|Edit|MultiEdit|NotebookEdit|TodoWrite)$/, behavior: { place: 'desk', icon: '⌨️', verb: 'Writing' } },
-  { match: /^(Read|Grep|Glob|LS)$/, behavior: { place: 'cabinets', icon: '📁', verb: 'Reading' } },
+  { match: /^(Write|Edit|MultiEdit|NotebookEdit|TodoWrite|write_file)$/, behavior: { place: 'desk', icon: '⌨️', verb: 'Writing' } },
+  { match: /^(write_plan)$/, behavior: { place: 'desk', icon: '✏️', verb: 'Drawing' } },
+  { match: /^(create_tasks|complete_task|finish_run)$/, behavior: { place: 'desk', icon: '📋', verb: 'Filing' } },
+  { match: /^(Read|Grep|Glob|LS|read_file|list_files)$/, behavior: { place: 'cabinets', icon: '📁', verb: 'Reading' } },
   { match: /^(WebSearch|WebFetch)$/, behavior: { place: 'library', icon: '🔎', verb: 'Researching' } },
-  { match: /^(Bash|PowerShell)$/, behavior: { place: 'server', icon: '⚙️', verb: 'Running' } },
+  { match: /^(Bash|PowerShell|run_command)$/, behavior: { place: 'server', icon: '⚙️', verb: 'Running' } },
+  { match: /^(ask_human|ask_architect|answer)$/, behavior: { place: 'desk', icon: '💬', verb: 'Asking' } },
   { match: /^mcp__/, behavior: { place: 'desk', icon: '🔌', verb: 'Using' } },
 ];
 
