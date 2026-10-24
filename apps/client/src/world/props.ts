@@ -1,5 +1,7 @@
 import {
   BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
   Color,
   Group,
@@ -11,6 +13,7 @@ import {
   SRGBColorSpace,
   type Material,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { PropKind } from './layout';
 
 /** A built prop; `update` is called every frame for props that animate (server LEDs). */
@@ -172,6 +175,87 @@ function inboxTray(): Prop {
   part(object, [0.012, 0.04, 0.16], tray, [0.104, 0.02, 0]);
   part(object, [0.17, 0.02, 0.12], shaded('#ffffff'), [0, 0.022, 0]);
   return { object };
+}
+
+// ── Books for bookcase shelves ───────────────────────────────────────────────
+
+/** Interior of a Kenney bookcase model, measured from the GLB (shelf board tops). */
+export interface ShelfSpec {
+  innerWidth: number;
+  depth: number;
+  shelfTops: readonly number[];
+  /** Free height above each shelf board. */
+  clearance: number;
+}
+
+export const BOOKCASE_SHELVES: Readonly<Record<string, ShelfSpec>> = {
+  bookcaseOpen: { innerWidth: 0.34, depth: 0.2, shelfTops: [0.13, 0.37, 0.61], clearance: 0.21 },
+  bookcaseOpenLow: { innerWidth: 0.34, depth: 0.2, shelfTops: [0.13], clearance: 0.21 },
+  bookcaseClosedWide: { innerWidth: 0.72, depth: 0.2, shelfTops: [0.07, 0.31, 0.55], clearance: 0.21 },
+};
+
+const BOOK_COLORS = [
+  '#a22633', '#e43b44', '#f77622', '#feae34', '#3e8948', '#63c74d', '#124e89',
+  '#0099db', '#68386c', '#b55088', '#733e39', '#c0cbdc', '#262b44',
+];
+const BOOK_MATERIAL = new MeshLambertMaterial({ vertexColors: true });
+const BOOK_GAP = 0.002;
+const PARTIAL_SHELF_CHANCE = 0.15;
+const MISSING_BOOK_CHANCE = 0.07;
+
+/** Small deterministic PRNG (mulberry32) so every bookcase looks the same on each load. */
+function seededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function book(width: number, height: number, depth: number, x: number, y: number, color: Color): BoxGeometry {
+  const geometry = new BoxGeometry(width, height, depth);
+  geometry.translate(x + width / 2, y + height / 2, 0);
+  const colors = new Float32Array(geometry.attributes.position.count * 3);
+  for (let i = 0; i < colors.length; i += 3) colors.set([color.r, color.g, color.b], i);
+  geometry.setAttribute('color', new BufferAttribute(colors, 3));
+  return geometry;
+}
+
+/**
+ * Rows of book spines filling every shelf of a bookcase, merged into one mesh
+ * (one draw call per bookcase). Varied sizes, colors, gaps and half-empty shelves.
+ * Local frame matches the bookcase model: centered on x/z, standing on y = 0.
+ */
+export function createBookRows(spec: ShelfSpec, seed: number): Mesh {
+  const random = seededRandom(seed);
+  const color = new Color();
+  const books: BoxGeometry[] = [];
+  const left = -spec.innerWidth / 2;
+  for (const shelfTop of spec.shelfTops) {
+    const fillTo = left + spec.innerWidth * (random() < PARTIAL_SHELF_CHANCE ? 0.5 + random() * 0.35 : 1);
+    let x = left;
+    while (x < fillTo) {
+      if (random() < MISSING_BOOK_CHANCE) {
+        x += 0.03 + random() * 0.05;
+        continue;
+      }
+      const width = 0.022 + random() * 0.02;
+      if (x + width > -left) break;
+      const height = Math.min(spec.clearance - 0.015, 0.11 + random() * 0.07);
+      const depth = spec.depth * (0.75 + random() * 0.25);
+      color.set(BOOK_COLORS[Math.floor(random() * BOOK_COLORS.length)]);
+      books.push(book(width, height, depth, x, shelfTop, color));
+      x += width + BOOK_GAP;
+    }
+  }
+  const merged = books.length ? mergeGeometries(books) : null;
+  books.forEach((geometry) => geometry.dispose());
+  const mesh = new Mesh(merged ?? new BufferGeometry(), BOOK_MATERIAL);
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 export function createProp(kind: PropKind, seed: number): Prop {

@@ -1,8 +1,8 @@
-import { Color, DirectionalLight, Group, HemisphereLight } from 'three';
+import { Color, DirectionalLight, Group, HemisphereLight, type Mesh } from 'three';
 import { loadModel } from './assets';
 import { createFloor } from './floor';
 import { FURNITURE, OFFICE_DEPTH, OFFICE_WIDTH, PROPS, ROOMS, SPOTS, WALLS, type Placement, type SpotDef } from './layout';
-import { createProp, type Prop } from './props';
+import { BOOKCASE_SHELVES, createBookRows, createProp, type Prop } from './props';
 import { WalkGrid } from './walkGrid';
 import { blockWalls, buildWalls } from './walls';
 
@@ -41,6 +41,19 @@ async function placeModel(placement: Placement): Promise<Group> {
   return wrapper;
 }
 
+/** Every bookcase in the layout gets its shelves filled, in the bookcase's own frame. */
+function fillBookcases(): Mesh[] {
+  return FURNITURE.flatMap((placement, index) => {
+    const spec = BOOKCASE_SHELVES[placement.model];
+    if (!spec) return [];
+    const rows = createBookRows(spec, index + 1);
+    rows.position.set(placement.at[0], placement.y ?? 0, placement.at[1]);
+    rows.rotation.y = placement.rotation ?? 0;
+    rows.scale.setScalar(placement.scale ?? 1);
+    return [rows];
+  });
+}
+
 function buildGrid(): WalkGrid {
   const grid = new WalkGrid(OFFICE_WIDTH, OFFICE_DEPTH);
   blockWalls(grid, WALLS);
@@ -63,7 +76,7 @@ export async function buildOffice(): Promise<Office> {
   });
 
   const [walls, ...furniture] = await Promise.all([buildWalls(WALLS), ...FURNITURE.map(placeModel)]);
-  group.add(walls, ...furniture);
+  group.add(walls, ...furniture, ...fillBookcases());
 
   const animated = props.filter((prop) => prop.update);
   return {
