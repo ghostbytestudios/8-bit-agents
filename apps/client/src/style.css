@@ -8,6 +8,7 @@
   --boss: #feae34;
   --architect: #0099db;
   --worker: #63c74d;
+  --danger: #e43b44;
 }
 
 html,
@@ -178,4 +179,497 @@ body {
 
 #hud .off {
   color: var(--off);
+}
+
+/* ── Clickable name tags ─────────────────────────────────────────────────── */
+
+button.name-tag {
+  margin: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+button.name-tag:hover,
+button.name-tag:focus-visible {
+  background: var(--panel);
+  outline: none;
+}
+
+.actor-overlay.is-selected .name-tag {
+  color: var(--ink);
+  background: var(--role);
+}
+
+.actor-overlay.is-selected .name-tag small {
+  color: var(--ink);
+}
+
+/* ── Shared pixel UI ─────────────────────────────────────────────────────── */
+
+#topbar,
+.dock {
+  --ui-font: 'Press Start 2P', monospace;
+  font-family: var(--ui-font);
+  color: var(--text);
+}
+
+.panel {
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px var(--edge);
+}
+
+.pixel-button,
+.link-button,
+.tab,
+.topbar__alert {
+  font: inherit;
+  cursor: pointer;
+}
+
+.pixel-button {
+  padding: 5px 7px;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--text);
+  border: 2px solid var(--ink);
+  box-shadow: inset -2px -2px 0 var(--off);
+}
+
+.pixel-button:hover {
+  background: var(--accent);
+}
+
+.pixel-button:active {
+  box-shadow: inset 2px 2px 0 var(--off);
+}
+
+.pixel-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.pixel-button[aria-pressed='true'] {
+  background: var(--accent);
+}
+
+.pixel-button--icon {
+  padding: 5px 6px;
+}
+
+.link-button {
+  padding: 0;
+  font-size: 7px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+:is(.pixel-button, .link-button, .tab, .topbar__alert):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pixel-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  font-family: var(--ui-font);
+  font-size: 8px;
+  color: var(--text);
+  background: var(--ink);
+  border: 2px solid var(--edge);
+}
+
+.pixel-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 3px solid var(--ink);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.panel__subtitle {
+  margin: 12px 0 6px;
+  font-size: 7px;
+  font-weight: normal;
+  color: var(--off);
+}
+
+.panel__empty {
+  margin: 8px 0;
+  font-size: 7px;
+  line-height: 1.8;
+  color: var(--off);
+  list-style: none;
+}
+
+.line-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 7px;
+  line-height: 1.8;
+}
+
+.line-list li {
+  overflow-wrap: anywhere;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+
+#topbar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  max-width: calc(100vw - 372px);
+  padding: 8px 12px;
+  font-size: 9px;
+  line-height: 1.6;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px var(--edge);
+  z-index: 2;
+}
+
+.topbar__title {
+  color: var(--accent);
+}
+
+.topbar__alert {
+  padding: 3px 6px;
+  font-size: 8px;
+  color: var(--ink);
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  animation: blink 1s steps(2, start) infinite;
+}
+
+.topbar__alert[hidden] {
+  display: none;
+}
+
+/* ── Dock ────────────────────────────────────────────────────────────────── */
+
+.dock {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(320px, calc(100vw - 24px));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dock[hidden] {
+  display: none;
+}
+
+.dock > .panel {
+  pointer-events: auto;
+}
+
+.inspector {
+  --role: var(--worker);
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  max-height: 55%;
+  min-height: 0;
+}
+
+.inspector[hidden] {
+  display: none;
+}
+
+.inspector[data-role='boss'] {
+  --role: var(--boss);
+}
+
+.inspector[data-role='architect'] {
+  --role: var(--architect);
+}
+
+.inspector .panel__header {
+  border-left: 6px solid var(--role);
+}
+
+.inspector__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.inspector__subtitle {
+  margin: 4px 0 0;
+  font-size: 6px;
+  color: var(--role);
+}
+
+.inspector__body {
+  overflow-y: auto;
+  padding: 4px 10px 10px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 8px 0 0;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.stats dt {
+  color: var(--off);
+}
+
+.stats dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inspector__waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 8px;
+  font-size: 7px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--accent);
+}
+
+.inspector__waiting p {
+  flex: 1;
+  margin: 0;
+}
+
+.tabbed {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+}
+
+.tab-list {
+  display: flex;
+  border-bottom: 3px solid var(--ink);
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 7px;
+  color: var(--off);
+  background: var(--ink);
+  border: 0;
+  border-right: 3px solid var(--ink);
+}
+
+.tab:last-child {
+  border-right: 0;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.tab--urgent {
+  color: var(--accent);
+}
+
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 10px 10px;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+/* ── Inbox ───────────────────────────────────────────────────────────────── */
+
+.inbox-card {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--ink);
+  border-left: 4px solid var(--accent);
+}
+
+.inbox-card[data-kind='approval'] {
+  border-left-color: var(--danger);
+}
+
+.inbox-card.is-sending {
+  opacity: 0.6;
+}
+
+.inbox-card__header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 6px;
+  color: var(--off);
+}
+
+.inbox-card__age {
+  margin-left: auto;
+}
+
+.inbox-card__prompt {
+  margin: 8px 0;
+  font-size: 8px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.inbox-card__options,
+.inbox-card__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* ── Task board ──────────────────────────────────────────────────────────── */
+
+.task-board__plan {
+  padding: 2px 8px 8px;
+  margin-top: 8px;
+  font-size: 7px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: #ffffff;
+  border-left: 4px solid var(--architect);
+}
+
+.task-board__plan .panel__subtitle {
+  color: var(--architect);
+}
+
+.task-board__plan p {
+  margin: 0;
+}
+
+.task-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-card {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  font-size: 7px;
+  line-height: 1.6;
+  background: var(--ink);
+  border-left: 4px solid var(--off);
+}
+
+.task-column--doing .task-card {
+  border-left-color: var(--accent);
+}
+
+.task-column--review .task-card {
+  border-left-color: var(--architect);
+}
+
+.task-column--done .task-card {
+  border-left-color: var(--worker);
+  color: var(--off);
+}
+
+.task-column--failed .task-card {
+  border-left-color: var(--danger);
+}
+
+.task-card__title {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.task-card__unassigned {
+  font-size: 6px;
+  color: var(--off);
+}
+
+/* ── Activity log ────────────────────────────────────────────────────────── */
+
+.activity-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-log__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 0;
+  font-size: 7px;
+  line-height: 1.6;
+  border-bottom: 1px solid var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.activity-log__who {
+  font-size: 6px;
+  color: var(--accent);
+}
+
+.activity-log__entry--error .activity-log__who,
+.activity-log__entry--warn .activity-log__who {
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar__alert {
+    animation: none;
+  }
+}
+
+/* Narrow screens: panels take the bottom half, the top bar spans the width. */
+@media (max-width: 700px) {
+  #topbar {
+    right: 12px;
+    max-width: none;
+  }
+
+  .dock {
+    top: 50%;
+    left: 12px;
+    width: auto;
+  }
+
+  #hud {
+    display: none;
+  }
 }

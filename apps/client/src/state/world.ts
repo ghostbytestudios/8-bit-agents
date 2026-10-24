@@ -14,6 +14,16 @@ export interface AgentInfo {
   taskId: string | null;
   costUsd: number;
   tokens: number;
+  /** Newest first, capped at MAX_TOOL_HISTORY. */
+  recentTools: readonly ToolRecord[];
+}
+
+export interface ToolRecord {
+  toolCallId: string;
+  tool: string;
+  summary: string;
+  state: 'running' | 'ok' | 'failed';
+  ts: number;
 }
 
 export interface TaskInfo {
@@ -29,12 +39,27 @@ export interface InboxRequest {
   prompt: string;
   options: readonly string[];
   kind: HumanInputKind;
+  requestedAt: number;
 }
 
 export interface ChatLine {
   from: string;
   to: string;
   text: string;
+  ts: number;
+}
+
+export interface LogLine {
+  agentId: string;
+  level: 'info' | 'warn' | 'error';
+  text: string;
+  ts: number;
+}
+
+/** The plan currently on the Architect's whiteboard. */
+export interface PlanInfo {
+  agentId: string;
+  markdown: string;
   ts: number;
 }
 
@@ -45,10 +70,14 @@ export interface WorldState {
   tasks: ReadonlyMap<string, TaskInfo>;
   inbox: ReadonlyMap<string, InboxRequest>;
   messages: readonly ChatLine[];
+  logs: readonly LogLine[];
+  plan: PlanInfo | null;
   totalCostUsd: number;
 }
 
 const MAX_MESSAGES = 50;
+const MAX_LOGS = 50;
+const MAX_TOOL_HISTORY = 8;
 
 export const EMPTY_WORLD: WorldState = {
   runId: null,
@@ -57,6 +86,8 @@ export const EMPTY_WORLD: WorldState = {
   tasks: new Map(),
   inbox: new Map(),
   messages: [],
+  logs: [],
+  plan: null,
   totalCostUsd: 0,
 };
 
@@ -82,6 +113,18 @@ function updateTask(state: WorldState, taskId: string, patch: Partial<TaskInfo>)
   return { ...state, tasks: withEntry(state.tasks, taskId, { ...task, ...patch }) };
 }
 
+function withToolStarted(agent: AgentInfo, record: ToolRecord): Partial<AgentInfo> {
+  return { currentTool: record.tool, recentTools: [record, ...agent.recentTools].slice(0, MAX_TOOL_HISTORY) };
+}
+
+function withToolFinished(agent: AgentInfo, toolCallId: string, ok: boolean): Partial<AgentInfo> {
+  const state: ToolRecord['state'] = ok ? 'ok' : 'failed';
+  return {
+    currentTool: null,
+    recentTools: agent.recentTools.map((call) => (call.toolCallId === toolCallId ? { ...call, state } : call)),
+  };
+}
+
 /** Pure reducer: returns a new state; duplicates and stale events (seq ≤ lastSeq) are ignored. */
 export function reduceWorld(state: WorldState, envelope: Envelope): WorldState {
   const isNewRun = envelope.runId !== state.runId;
@@ -96,15 +139,22 @@ export function reduceWorld(state: WorldState, envelope: Envelope): WorldState {
         ...next,
         agents: withEntry(next.agents, event.agentId, {
           id: event.agentId, role: event.role, name: event.name, model: event.model,
-          status: 'idle', currentTool: null, taskId: null, costUsd: 0, tokens: 0,
+          status: 'idle', currentTool: null, taskId: null, costUsd: 0, tokens: 0, recentTools: [],
         }),
       };
     case 'agent.status':
       return updateAgent(next, event.agentId, { status: event.status });
-    case 'tool.started':
-      return updateAgent(next, event.agentId, { currentTool: event.tool });
-    case 'tool.finished':
-      return updateAgent(next, event.agentId, { currentTool: null });
+    case 'tool.started': {
+      const agent = next.agents.get(event.agentId);
+      if (!agent) return next;
+      const record: ToolRecord = { toolCallId: event.toolCallId, tool: event.tool, summary: event.summary, state: 'running', ts: envelope.ts };
+      return updateAgent(next, event.agentId, withToolStarted(agent, record));
+    }
+    case 'tool.finished': {
+      const agent = next.agents.get(event.agentId);
+      if (!agent) return next;
+      return updateAgent(next, event.agentId, withToolFinished(agent, event.toolCallId, event.ok));
+    }
     case 'message.sent': {
       const line: ChatLine = { from: event.from, to: event.to, text: event.text, ts: envelope.ts };
       return { ...next, messages: [...next.messages, line].slice(-MAX_MESSAGES) };
@@ -123,7 +173,7 @@ export function reduceWorld(state: WorldState, envelope: Envelope): WorldState {
         ...next,
         inbox: withEntry(next.inbox, event.requestId, {
           requestId: event.requestId, agentId: event.agentId, prompt: event.prompt,
-          options: event.options ?? [], kind: event.kind,
+          options: event.options ?? [], kind: event.kind, requestedAt: envelope.ts,
         }),
       };
     case 'human.input_resolved':
@@ -138,8 +188,11 @@ export function reduceWorld(state: WorldState, envelope: Envelope): WorldState {
       });
     }
     case 'plan.updated':
-    case 'log':
-      return next;
+      return { ...next, plan: { agentId: event.agentId, markdown: event.markdown ?? event.mermaid ?? '', ts: envelope.ts } };
+    case 'log': {
+      const line: LogLine = { agentId: event.agentId, level: event.level, text: event.text, ts: envelope.ts };
+      return { ...next, logs: [...next.logs, line].slice(-MAX_LOGS) };
+    }
   }
 }
 

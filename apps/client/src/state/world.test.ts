@@ -79,6 +79,46 @@ describe('reduceWorld', () => {
     expect(state.messages.at(-1)?.text).toBe('m59');
   });
 
+  it('keeps a short per-agent tool history with each call marked ok or failed', () => {
+    const state = play([
+      spawnBoss,
+      { type: 'tool.started', agentId: 'boss', toolCallId: 'c1', tool: 'Bash', summary: 'npm test' },
+      { type: 'tool.finished', agentId: 'boss', toolCallId: 'c1', ok: false },
+      { type: 'tool.started', agentId: 'boss', toolCallId: 'c2', tool: 'Read', summary: 'README.md' },
+    ]);
+    expect(state.agents.get('boss')?.recentTools.map((call) => [call.tool, call.state])).toEqual([
+      ['Read', 'running'],
+      ['Bash', 'failed'],
+    ]);
+  });
+
+  it('caps the tool history at 8 calls, newest first', () => {
+    const calls: HarnessEvent[] = Array.from({ length: 12 }, (_, i) => ({
+      type: 'tool.started', agentId: 'boss', toolCallId: `c${i}`, tool: 'Read', summary: `file${i}`,
+    }));
+    const tools = play([spawnBoss, ...calls]).agents.get('boss')?.recentTools ?? [];
+    expect(tools).toHaveLength(8);
+    expect(tools[0].summary).toBe('file11');
+  });
+
+  it('records logs and the latest plan', () => {
+    const state = play([
+      spawnBoss,
+      { type: 'log', agentId: 'boss', level: 'error', text: 'tests failed' },
+      { type: 'plan.updated', agentId: 'boss', markdown: 'API → UI' },
+    ]);
+    expect(state.logs.at(-1)).toMatchObject({ agentId: 'boss', level: 'error', text: 'tests failed' });
+    expect(state.plan).toMatchObject({ agentId: 'boss', markdown: 'API → UI' });
+  });
+
+  it('stamps inbox requests with the time they were asked', () => {
+    const state = play([
+      spawnBoss,
+      { type: 'human.input_requested', requestId: 'r1', agentId: 'boss', prompt: 'Go?', kind: 'question' },
+    ]);
+    expect(state.inbox.get('r1')?.requestedAt).toBeGreaterThan(0);
+  });
+
   it('starts fresh when a new run begins', () => {
     const state = play([spawnBoss]);
     const next = reduceWorld(state, envelope({ type: 'task.created', taskId: 't9', title: 'New run' }, 'run-b'));

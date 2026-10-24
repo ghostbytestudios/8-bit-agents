@@ -17,7 +17,6 @@ interface Question {
 
 const WORKER_COUNT = 6;
 const DISPATCH_INTERVAL_SECONDS = 1.5;
-const AUTO_ANSWER_SECONDS: Range = [10, 14];
 const READ_BURST_SECONDS = 0.35;
 const NEW_SPRINT_SIZE = 4;
 
@@ -216,16 +215,14 @@ export class MockRun implements EventFeed {
     await this.tool(agentId, 'Bash', 'npm test', 3, true);
   }
 
-  /** Walks the question to your desk; auto-answers with the first option until the inbox UI exists. */
+  /** Walks the question to your desk and waits, like a real agent, until you answer from the inbox. */
   private async askHuman(agentId: string): Promise<void> {
     this.hasOpenQuestion = true;
     const question = pick(QUESTIONS);
     const requestId = this.nextId('ask');
     this.status(agentId, 'blocked');
     this.emit({ type: 'human.input_requested', requestId, agentId, prompt: question.prompt, options: [...question.options], kind: question.kind });
-    const answered = new Promise<string>((resolve) => this.pendingAnswers.set(requestId, resolve));
-    const timedOut = this.sleep(randomIn(AUTO_ANSWER_SECONDS)).then(() => question.options[0]);
-    const answer = await Promise.race([answered, timedOut]);
+    const answer = await new Promise<string>((resolve) => this.pendingAnswers.set(requestId, resolve));
     this.pendingAnswers.delete(requestId);
     this.emit({ type: 'human.input_resolved', requestId, answer });
     this.status(agentId, 'working');

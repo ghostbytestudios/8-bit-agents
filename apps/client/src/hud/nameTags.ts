@@ -31,6 +31,8 @@ interface Tag {
  */
 export class NameTags {
   visible = true;
+  /** Called when a name tag is clicked. */
+  onSelect: ((id: string) => void) | null = null;
 
   private readonly layer: HTMLElement;
   private readonly tags = new Map<string, Tag>();
@@ -50,8 +52,11 @@ export class NameTags {
     bubble.className = 'speech-bubble';
     bubble.hidden = true;
 
-    const tag = document.createElement('div');
+    const tag = document.createElement('button');
+    tag.type = 'button';
     tag.className = 'name-tag';
+    tag.title = `Inspect ${target.name}`;
+    tag.addEventListener('click', () => this.onSelect?.(id));
     const line = document.createElement('span');
     line.className = 'name-tag__line';
     const icon = document.createElement('span');
@@ -69,6 +74,11 @@ export class NameTags {
     root.append(bubble, tag);
     this.layer.appendChild(root);
     this.tags.set(id, { target, root, bubble, icon, steadyIcon: '', flashSecondsLeft: 0, bubbleSecondsLeft: 0 });
+  }
+
+  /** Highlights one agent's tag (or none). */
+  setSelected(id: string | null): void {
+    for (const [tagId, tag] of this.tags) tag.root.classList.toggle('is-selected', tagId === id);
   }
 
   /** Icon that stays until changed (e.g. 💭 while thinking). Unknown ids are ignored. */

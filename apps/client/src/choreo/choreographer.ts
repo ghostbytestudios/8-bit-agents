@@ -82,8 +82,14 @@ export class Choreographer {
     this.entrance = this.requireSpot('entrance');
   }
 
-  get characters(): Iterable<Character> {
-    return [...this.actors.values()].filter((actor) => actor.hasEntered).map((actor) => actor.character);
+  /** Characters standing in the office (not still queued outside the door), by agent id. */
+  get presentCharacters(): ReadonlyArray<{ id: string; character: Character }> {
+    return [...this.actors.values()].filter((actor) => actor.hasEntered).map(({ id, character }) => ({ id, character }));
+  }
+
+  characterOf(id: string): Character | null {
+    const actor = this.actors.get(id);
+    return actor?.hasEntered ? actor.character : null;
   }
 
   handle(event: HarnessEvent, world: WorldState): void {
