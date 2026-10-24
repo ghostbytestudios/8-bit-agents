@@ -9,7 +9,7 @@ export interface CharacterLook {
   tie?: string;
 }
 
-export type CharacterPose = 'idle' | 'walk' | 'sit' | 'type' | 'draw' | 'operate';
+export type CharacterPose = 'idle' | 'walk' | 'sit' | 'type' | 'draw' | 'operate' | 'raise' | 'puzzled';
 
 const LEG_HEIGHT = 0.28;
 const TORSO_HEIGHT = 0.26;
@@ -192,6 +192,18 @@ export class Character {
         }
         break;
       }
+      case 'raise':
+        // Hand up, bouncing on the spot: "I have a question!"
+        armRight.rotation.x = -2.9 + Math.sin(time * 8) * 0.12;
+        armLeft.rotation.z = -0.05;
+        this.body.position.y = Math.abs(Math.sin(time * 4)) * 0.015;
+        break;
+      case 'puzzled':
+        // Scratching the head.
+        armRight.rotation.x = -2.3;
+        armRight.rotation.z = 0.55 + Math.sin(time * 9) * 0.08;
+        this.head.rotation.z = Math.sin(time * 1.5) * 0.12;
+        break;
       case 'operate':
         armLeft.rotation.x = -1.0 + Math.sin(time * 6) * 0.15;
         armRight.rotation.x = -1.0 + Math.sin(time * 6 + 1.5) * 0.15;

@@ -15,19 +15,25 @@ const HEAD_CLEARANCE = 0.08;
 
 interface Tag {
   target: NameTagTarget;
-  element: HTMLElement;
+  root: HTMLElement;
+  bubble: HTMLElement;
+  icon: HTMLElement;
+  steadyIcon: string;
+  flashSecondsLeft: number;
+  bubbleSecondsLeft: number;
 }
 
 /**
- * Floating name labels drawn as DOM over the canvas, so text stays crisp at any
- * zoom and is untouched by the palette/outline post-processing.
- * Names are set via textContent — agent-provided names can never inject markup.
+ * Everything floating over a character: name tag, status icon, and speech bubble.
+ * Drawn as DOM over the canvas so text stays crisp at any zoom and is untouched by
+ * the palette/outline post-processing. All text is set via textContent — names and
+ * messages come from agents and must never be able to inject markup.
  */
 export class NameTags {
   visible = true;
 
   private readonly layer: HTMLElement;
-  private readonly tags: Tag[] = [];
+  private readonly tags = new Map<string, Tag>();
   private readonly scratch = new Vector3();
 
   constructor(parent: HTMLElement) {
@@ -36,33 +42,84 @@ export class NameTags {
     parent.appendChild(this.layer);
   }
 
-  add(target: NameTagTarget): void {
-    const element = document.createElement('div');
-    element.className = `name-tag name-tag--${target.role}`;
+  add(id: string, target: NameTagTarget): void {
+    const root = document.createElement('div');
+    root.className = `actor-overlay actor-overlay--${target.role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'speech-bubble';
+    bubble.hidden = true;
+
+    const tag = document.createElement('div');
+    tag.className = 'name-tag';
+    const line = document.createElement('span');
+    line.className = 'name-tag__line';
+    const icon = document.createElement('span');
+    icon.className = 'name-tag__icon';
     const name = document.createElement('span');
     name.textContent = target.name;
-    element.appendChild(name);
+    line.append(icon, name);
+    tag.appendChild(line);
     if (target.subtitle) {
       const subtitle = document.createElement('small');
       subtitle.textContent = target.subtitle;
-      element.appendChild(subtitle);
+      tag.appendChild(subtitle);
     }
-    this.layer.appendChild(element);
-    this.tags.push({ target, element });
+
+    root.append(bubble, tag);
+    this.layer.appendChild(root);
+    this.tags.set(id, { target, root, bubble, icon, steadyIcon: '', flashSecondsLeft: 0, bubbleSecondsLeft: 0 });
   }
 
-  /** Re-projects every tag onto the screen; call once per frame after characters move. */
-  update(camera: Camera, canvas: HTMLCanvasElement): void {
+  /** Icon that stays until changed (e.g. 💭 while thinking). Unknown ids are ignored. */
+  setIcon(id: string, icon: string): void {
+    const tag = this.tags.get(id);
+    if (!tag) return;
+    tag.steadyIcon = icon;
+    if (tag.flashSecondsLeft <= 0) tag.icon.textContent = icon;
+  }
+
+  /** Icon shown briefly (e.g. ❌ when a command fails), then back to the steady icon. */
+  flashIcon(id: string, icon: string, seconds: number): void {
+    const tag = this.tags.get(id);
+    if (!tag) return;
+    tag.flashSecondsLeft = seconds;
+    tag.icon.textContent = icon;
+  }
+
+  /** Speech bubble; `Infinity` keeps it up until the next `say`. */
+  say(id: string, text: string, seconds: number): void {
+    const tag = this.tags.get(id);
+    if (!tag) return;
+    tag.bubble.textContent = text;
+    tag.bubble.hidden = text.length === 0;
+    tag.bubbleSecondsLeft = seconds;
+  }
+
+  /** Re-projects every overlay onto the screen and ticks timers; call once per frame. */
+  update(camera: Camera, canvas: HTMLCanvasElement, dt: number): void {
     this.layer.hidden = !this.visible;
-    if (!this.visible) return;
     const rect = canvas.getBoundingClientRect();
-    for (const { target, element } of this.tags) {
-      const point = target.headPosition(this.scratch);
+    for (const tag of this.tags.values()) {
+      this.tickTimers(tag, dt);
+      if (!this.visible) continue;
+      const point = tag.target.headPosition(this.scratch);
       point.y += HEAD_CLEARANCE;
       point.project(camera);
       const x = Math.round(rect.left + ((point.x + 1) / 2) * rect.width);
       const y = Math.round(rect.top + ((1 - point.y) / 2) * rect.height);
-      element.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+      tag.root.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+    }
+  }
+
+  private tickTimers(tag: Tag, dt: number): void {
+    if (tag.flashSecondsLeft > 0) {
+      tag.flashSecondsLeft -= dt;
+      if (tag.flashSecondsLeft <= 0) tag.icon.textContent = tag.steadyIcon;
+    }
+    if (tag.bubbleSecondsLeft > 0) {
+      tag.bubbleSecondsLeft -= dt;
+      if (tag.bubbleSecondsLeft <= 0) tag.bubble.hidden = true;
     }
   }
 }

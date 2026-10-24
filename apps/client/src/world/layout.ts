@@ -36,7 +36,8 @@ const TURNED = Math.PI;
 export type FloorStyle = 'wood' | 'carpetBlue' | 'carpetLight' | 'carpetWarm' | 'serverTile' | 'linoleum' | 'lobby';
 export type WallStyle = 'tall' | 'low' | 'partition';
 export type PropKind = 'whiteboard' | 'corkboard' | 'serverRack' | 'filingCabinet' | 'printer' | 'inboxTray';
-export type SpotKind = 'boss' | 'whiteboard' | 'desk' | 'activity' | 'visitor' | 'entrance';
+/** 'visit' = where a colleague stands to talk to whoever owns `visit:<home spot id>`. */
+export type SpotKind = 'boss' | 'whiteboard' | 'desk' | 'visit' | 'activity' | 'visitor' | 'entrance';
 
 type Pair = readonly [number, number];
 
@@ -139,7 +140,9 @@ function cubicle(number: number, x0: number, z0: number) {
     anchor: [deskX, z0 + 1.1],
     seatHeight: SEAT_HEIGHT,
   });
-  return { furniture, walls, spot: desk };
+  // Just behind the chair, in the aisle.
+  const visit = spot(`visit:desk:W${number}`, 'visit', [x0, z0 + 2], FACE_NORTH, 'idle', { anchor: [deskX, z0 + 2.2] });
+  return { furniture, walls, spot: desk, visit };
 }
 
 const CUBICLES = CUBICLE_ROWS.flatMap((z0, row) =>
@@ -280,6 +283,9 @@ export const SPOTS: readonly SpotDef[] = [
   spot('boss', 'boss', [3, 2], FACE_NORTH, 'type', { anchor: [3.5, 2.4], seatHeight: SEAT_HEIGHT }),
   spot('whiteboard', 'whiteboard', [11, 0], FACE_NORTH, 'draw', { anchor: [11.95, 0.72] }),
   ...CUBICLES.map((c) => c.spot),
+  ...CUBICLES.map((c) => c.visit),
+  spot('visit:boss', 'visit', [4, 2], FACE_WEST, 'idle', { anchor: [4.35, 2.45] }),
+  spot('visit:whiteboard', 'visit', [12, 1], FACE_WEST, 'idle', { anchor: [12.45, 1.05] }),
 
   spot('server:a', 'activity', [17, 1], FACE_NORTH, 'operate', { anchor: [17.3, 1.15] }),
   spot('server:b', 'activity', [20, 3], FACE_NORTH, 'operate', { anchor: [20.4, 3.2] }),
