@@ -21,6 +21,9 @@ export const FRONT_DOOR_OUTSIDE = { x: 7.5, z: OFFICE_DEPTH + 0.8 } as const;
 
 const DESK_HEIGHT = 0.384;
 const COUNTER_HEIGHT = 0.45;
+const BAR_HEIGHT = 0.42;
+const BOOKCASE_TOP = 0.79;
+const STOOL_SEAT_HEIGHT = 0.38;
 const TV_STAND_HEIGHT = 0.31;
 const SEAT_HEIGHT = 0.22;
 const SOFA_SEAT_HEIGHT = 0.2;
@@ -215,12 +218,26 @@ const LIBRARY: Placement[] = [
     at: [x, 6.18],
     blocks: [[Math.floor(x - 0.39), 6], [Math.floor(x + 0.39), 6]],
   })),
+  // Books and plants along the tops of the wall shelves.
+  { model: 'books', at: [15.6, 6.15], y: BOOKCASE_TOP },
+  { model: 'plantSmall3', at: [16.4, 6.15], y: BOOKCASE_TOP },
+  { model: 'books', at: [17.25, 6.15], y: BOOKCASE_TOP, rotation: 0.3 },
+  { model: 'books', at: [20.8, 6.15], y: BOOKCASE_TOP, rotation: -0.2 },
+  { model: 'plantSmall1', at: [21.6, 6.15], y: BOOKCASE_TOP },
+  { model: 'books', at: [22.4, 6.15], y: BOOKCASE_TOP },
   ...[18.2, 18.6, 19.0, 19.4, 19.8].map((x): Placement => ({ model: 'bookcaseOpen', at: [x, 8.3], blocks: [[Math.floor(x), 8]] })),
+  { model: 'rugRectangle', at: [19.0, 9.35], scale: 0.8 },
+  // Reading corners: the lounge chairs are seats (see library:read-* spots).
   { model: 'rugRound', at: [21.4, 9.3] },
-  { model: 'loungeChair', at: [21.4, 9.6], rotation: TURNED, blocks: [[21, 9]] },
-  { model: 'loungeChair', at: [16.4, 9.6], rotation: TURNED, blocks: [[16, 9]] },
+  { model: 'loungeChair', at: [21.4, 9.6], rotation: TURNED },
+  { model: 'loungeChair', at: [16.4, 9.6], rotation: TURNED },
   { model: 'sideTable', at: [17.3, 9.75], blocks: [[17, 9]] },
+  { model: 'lampSquareTable', at: [17.15, 9.75], y: DESK_HEIGHT },
+  { model: 'books', at: [17.45, 9.75], y: DESK_HEIGHT },
   { model: 'lampSquareFloor', at: [22.6, 9.5], blocks: [[22, 9]] },
+  { model: 'bookcaseOpenLow', at: [22.85, 8.2], rotation: -Math.PI / 2, blocks: [[22, 8]] },
+  { model: 'books', at: [22.85, 8.2], y: 0.4, rotation: -Math.PI / 2 },
+  { model: 'pottedPlant', at: [22.6, 7.0], blocks: [[22, 7]] },
 ];
 
 const BREAK_ROOM: Placement[] = [
@@ -228,16 +245,30 @@ const BREAK_ROOM: Placement[] = [
   { model: 'kitchenCabinet', at: [15.86, 10.3], blocks: [[15, 10]] },
   { model: 'kitchenCabinet', at: [16.29, 10.3], blocks: [[16, 10]] },
   { model: 'kitchenCabinet', at: [16.72, 10.3], blocks: [[16, 10]] },
+  { model: 'kitchenSink', at: [17.15, 10.3], blocks: [[17, 10]] },
+  { model: 'kitchenMicrowave', at: [15.86, 10.25], y: COUNTER_HEIGHT },
   { model: 'kitchenCoffeeMachine', at: [16.29, 10.3], y: COUNTER_HEIGHT },
-  { model: 'trashcan', at: [17.4, 10.3], blocks: [[17, 10]] },
+  { model: 'toaster', at: [16.72, 10.25], y: COUNTER_HEIGHT },
   { model: 'tableRound', at: [17.5, 12.6], blocks: [[17, 12]] },
   { model: 'chairDesk', at: [16.85, 12.6], rotation: Math.PI / 2 },
   { model: 'chairDesk', at: [18.15, 12.6], rotation: -Math.PI / 2 },
+  // TV corner: sofa, lounge chair and a rug.
   { model: 'cabinetTelevision', at: [21.0, 10.2], blocks: [[20, 10], [21, 10]] },
   { model: 'televisionModern', at: [21.0, 10.18], y: TV_STAND_HEIGHT },
+  { model: 'speaker', at: [22.0, 10.25], blocks: [[22, 10]] },
+  { model: 'rugRectangle', at: [21.0, 14.0] },
   { model: 'tableCoffee', at: [21.0, 13.6], blocks: [[20, 13], [21, 13]] },
   { model: 'loungeSofa', at: [21.0, 14.6], rotation: TURNED },
+  { model: 'loungeDesignChair', at: [19.7, 13.6], rotation: Math.PI / 2 },
+  // Coffee bar along the right wall, stools facing it.
+  ...[11.2, 11.63, 12.06, 12.49].map((z): Placement => ({ model: 'kitchenBar', at: [22.78, z], rotation: -Math.PI / 2 })),
+  { model: 'radio', at: [22.78, 11.25], y: BAR_HEIGHT, rotation: -Math.PI / 2 },
+  { model: 'kitchenBlender', at: [22.78, 12.3], y: BAR_HEIGHT },
+  { model: 'stoolBar', at: [22.35, 11.45] },
+  { model: 'stoolBar', at: [22.35, 12.4] },
+  { model: 'trashcan', at: [22.6, 13.4], blocks: [[22, 13]] },
   { model: 'pottedPlant', at: [22.6, 14.5], blocks: [[22, 14]] },
+  { model: 'pottedPlant', at: [15.4, 14.6], blocks: [[15, 14]] },
 ];
 
 const FARM_AND_LOBBY: Placement[] = [
@@ -266,6 +297,7 @@ export const FURNITURE: readonly Placement[] = [
 // ── Procedural props (no Kenney equivalent) ───────────────────────────────────
 
 const RACK_XS = [16.35, 16.97, 17.59, 18.21, 19.79, 20.41, 21.03, 21.65];
+const FRONT_CABINET_XS = [3, 4, 5];
 
 export const PROPS: readonly PropPlacement[] = [
   { prop: 'whiteboard', at: [11.5, 0.04], y: 0.78 },
@@ -273,6 +305,11 @@ export const PROPS: readonly PropPlacement[] = [
   ...RACK_XS.map((x): PropPlacement => ({ prop: 'serverRack', at: [x, 0.4], blocks: [[Math.floor(x), 0]] })),
   ...RACK_XS.map((x): PropPlacement => ({ prop: 'serverRack', at: [x, 2.6], blocks: [[Math.floor(x), 2]] })),
   ...[13.5, 14.5].map((x): PropPlacement => ({ prop: 'filingCabinet', at: [x, 6.3], blocks: [[Math.floor(x), 6]] })),
+  // Private cabinets so the Boss and Architect can read files without leaving.
+  { prop: 'filingCabinet', at: [4.45, 0.3], blocks: [[4, 0]] },
+  { prop: 'filingCabinet', at: [8.3, 2.5], rotation: Math.PI / 2, blocks: [[8, 2]] },
+  // Overflow cabinets on the front wall, next to the printer, facing into the room.
+  ...FRONT_CABINET_XS.map((x): PropPlacement => ({ prop: 'filingCabinet', at: [x + 0.5, 14.7], rotation: TURNED, blocks: [[x, 14]] })),
   { prop: 'printer', at: [1.5, 14.55], rotation: TURNED, blocks: [[1, 14]] },
   { prop: 'inboxTray', at: [11.7, 13.5], y: DESK_HEIGHT },
 ];
@@ -292,8 +329,15 @@ export const SPOTS: readonly SpotDef[] = [
   spot('library:a', 'activity', [16, 7], FACE_NORTH, 'operate', { anchor: [16.4, 7.0] }),
   spot('library:b', 'activity', [21, 7], FACE_NORTH, 'operate', { anchor: [21.2, 7.0] }),
   spot('library:c', 'activity', [18, 9], FACE_NORTH, 'operate', { anchor: [18.6, 8.95] }),
+  spot('library:read-a', 'activity', [16, 9], FACE_NORTH, 'sit', { anchor: [16.4, 9.55], seatHeight: SOFA_SEAT_HEIGHT }),
+  spot('library:read-b', 'activity', [21, 9], FACE_NORTH, 'sit', { anchor: [21.4, 9.55], seatHeight: SOFA_SEAT_HEIGHT }),
   spot('cabinets:a', 'activity', [13, 7], FACE_NORTH, 'operate', { anchor: [13.5, 6.95] }),
   spot('cabinets:b', 'activity', [14, 7], FACE_NORTH, 'operate', { anchor: [14.5, 6.95] }),
+  ...FRONT_CABINET_XS.map((x, i) =>
+    spot(`cabinets:front-${i + 1}`, 'activity', [x, 13], FACE_SOUTH, 'operate', { anchor: [x + 0.5, 14.05] })),
+  // `<place>@<home spot id>` = private to whoever lives at that home (see Choreographer).
+  spot('cabinets@boss', 'activity', [4, 1], FACE_NORTH, 'operate', { anchor: [4.45, 0.95] }),
+  spot('cabinets@whiteboard', 'activity', [9, 2], FACE_WEST, 'operate', { anchor: [8.95, 2.5] }),
   spot('printer', 'activity', [1, 13], FACE_SOUTH, 'operate', { anchor: [1.5, 13.95] }),
   spot('coffee', 'activity', [16, 11], FACE_NORTH, 'operate', { anchor: [16.29, 10.95] }),
   spot('meeting:a', 'activity', [10, 2], FACE_SOUTH, 'sit', { anchor: [10.58, 2.95], seatHeight: SEAT_HEIGHT }),
@@ -304,6 +348,9 @@ export const SPOTS: readonly SpotDef[] = [
   spot('break:b', 'activity', [18, 12], FACE_WEST, 'sit', { anchor: [18.15, 12.6], seatHeight: SEAT_HEIGHT }),
   spot('sofa:a', 'activity', [20, 14], FACE_NORTH, 'sit', { anchor: [20.75, 14.55], seatHeight: SOFA_SEAT_HEIGHT }),
   spot('sofa:b', 'activity', [21, 14], FACE_NORTH, 'sit', { anchor: [21.25, 14.55], seatHeight: SOFA_SEAT_HEIGHT }),
+  spot('sofa:c', 'activity', [19, 13], FACE_EAST, 'sit', { anchor: [19.75, 13.6], seatHeight: SOFA_SEAT_HEIGHT }),
+  spot('break:bar-a', 'activity', [22, 11], FACE_EAST, 'sit', { anchor: [22.35, 11.45], seatHeight: STOOL_SEAT_HEIGHT }),
+  spot('break:bar-b', 'activity', [22, 12], FACE_EAST, 'sit', { anchor: [22.35, 12.4], seatHeight: STOOL_SEAT_HEIGHT }),
 
   spot('visitor:a', 'visitor', [11, 12], FACE_SOUTH, 'idle', { anchor: [11.6, 12.4] }),
   spot('visitor:b', 'visitor', [12, 12], FACE_SOUTH, 'idle', { anchor: [12.4, 12.4] }),

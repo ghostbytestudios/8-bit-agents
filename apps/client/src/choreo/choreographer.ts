@@ -99,7 +99,6 @@ export class Choreographer {
         this.enqueue(event.agentId, {
           key: `tool:${behavior.place}:${event.tool}`,
           place: behavior.place,
-          pose: behavior.place === 'desk' ? undefined : behavior.pose,
           icon: behavior.icon,
           label: `${behavior.verb} ${event.summary}`,
           holdSeconds: TOOL_HOLD_SECONDS,
@@ -319,7 +318,9 @@ export class Choreographer {
       case 'library':
       case 'server':
       case 'printer':
-        return this.freeSpot(actor, PLACE_SPOT_PREFIXES[action.place]) ?? actor.home;
+        return this.privateSpot(actor, action.place)
+          ?? this.freeSpot(actor, PLACE_SPOT_PREFIXES[action.place])
+          ?? actor.home;
       case 'break':
         return this.freeSpot(actor, BREAK_SPOT_PREFIXES) ?? actor.home;
       case 'visitor':
@@ -333,12 +334,23 @@ export class Choreographer {
     }
   }
 
-  /** A random unclaimed spot whose id starts with one of the prefixes. */
+  /** A spot reserved for this agent's home (e.g. `cabinets@boss`), if one exists and is free. */
+  private privateSpot(actor: Actor, place: string): SpotDef | null {
+    const spot = this.options.spots.get(`${place}@${actor.home.id}`);
+    return spot && this.options.crowd.isSpotFree(spot.id, actor.id) ? spot : null;
+  }
+
+  /**
+   * The closest unclaimed spot whose id starts with one of the prefixes, so a busy
+   * set of cabinets sends people to the next-nearest set instead of across the office.
+   */
   private freeSpot(actor: Actor, prefixes: readonly string[]): SpotDef | null {
+    const { x, z } = actor.character.root.position;
+    const distance = (spot: SpotDef) => Math.hypot(spot.anchor.x - x, spot.anchor.z - z);
     const free = [...this.options.spots.values()].filter((spot) =>
       prefixes.some((prefix) => spot.id.startsWith(prefix)) && this.options.crowd.isSpotFree(spot.id, actor.id),
     );
-    return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+    return free.sort((a, b) => distance(a) - distance(b))[0] ?? null;
   }
 
   private pickHome(role: AgentRole): SpotDef | null {

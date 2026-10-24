@@ -1,5 +1,4 @@
 import type { AgentStatus } from '@harness/protocol';
-import type { CharacterPose } from '../actors/character';
 
 /**
  * How agent activity looks in the office. Kept as data so new tools (or harness
@@ -7,24 +6,23 @@ import type { CharacterPose } from '../actors/character';
  */
 export type WorkPlace = 'desk' | 'cabinets' | 'library' | 'server' | 'printer';
 
+/** Where the work happens; the spot itself decides the pose (stand at shelves, sit in reading chairs). */
 export interface ToolBehavior {
   place: WorkPlace;
-  /** Pose at that place; desk work uses the agent's own desk pose. */
-  pose: CharacterPose;
   icon: string;
   verb: string;
 }
 
 const TOOL_RULES: ReadonlyArray<{ match: RegExp; behavior: ToolBehavior }> = [
-  { match: /^(Write|Edit|MultiEdit|NotebookEdit|TodoWrite)$/, behavior: { place: 'desk', pose: 'type', icon: '⌨️', verb: 'Writing' } },
-  { match: /^(Read|Grep|Glob|LS)$/, behavior: { place: 'cabinets', pose: 'operate', icon: '📁', verb: 'Reading' } },
-  { match: /^(WebSearch|WebFetch)$/, behavior: { place: 'library', pose: 'operate', icon: '🔎', verb: 'Researching' } },
-  { match: /^(Bash|PowerShell)$/, behavior: { place: 'server', pose: 'operate', icon: '⚙️', verb: 'Running' } },
-  { match: /^mcp__/, behavior: { place: 'desk', pose: 'type', icon: '🔌', verb: 'Using' } },
+  { match: /^(Write|Edit|MultiEdit|NotebookEdit|TodoWrite)$/, behavior: { place: 'desk', icon: '⌨️', verb: 'Writing' } },
+  { match: /^(Read|Grep|Glob|LS)$/, behavior: { place: 'cabinets', icon: '📁', verb: 'Reading' } },
+  { match: /^(WebSearch|WebFetch)$/, behavior: { place: 'library', icon: '🔎', verb: 'Researching' } },
+  { match: /^(Bash|PowerShell)$/, behavior: { place: 'server', icon: '⚙️', verb: 'Running' } },
+  { match: /^mcp__/, behavior: { place: 'desk', icon: '🔌', verb: 'Using' } },
 ];
 
 /** Anything unrecognized: "using a gadget at their desk". Never breaks the game. */
-const FALLBACK: ToolBehavior = { place: 'desk', pose: 'type', icon: '🛠️', verb: 'Using' };
+const FALLBACK: ToolBehavior = { place: 'desk', icon: '🛠️', verb: 'Using' };
 
 export function behaviorForTool(tool: string): ToolBehavior {
   return TOOL_RULES.find((rule) => rule.match.test(tool))?.behavior ?? FALLBACK;

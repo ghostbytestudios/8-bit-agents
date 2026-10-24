@@ -21,6 +21,8 @@ const WHEEL_STEP = 50;
 const PAN_SPEED = 6;
 const MAX_FRAME_DT = 0.1;
 const DOOR_OUTSIDE = new Vector3(FRONT_DOOR_OUTSIDE.x, 0, FRONT_DOOR_OUTSIDE.z);
+/** True while the office is driven by the in-browser mock rather than real agents. */
+const IS_SIMULATED = true;
 
 function requireElement<T extends HTMLElement>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -64,7 +66,9 @@ function setZoom(level: number): void {
 function runStatusLines(): string[] {
   const { agents, tasks, inbox, totalCostUsd } = world.state;
   const done = [...tasks.values()].filter((task) => task.state === 'done').length;
-  const lines = [`AGENTS ${agents.size} · TASKS ${done}/${tasks.size} · $${totalCostUsd.toFixed(2)}`];
+  // The mock invents token usage; never let a fake number look like a real bill.
+  const cost = `$${totalCostUsd.toFixed(2)}${IS_SIMULATED ? ' <span class="off">SIM</span>' : ''}`;
+  const lines = [`AGENTS ${agents.size} · TASKS ${done}/${tasks.size} · ${cost}`];
   if (inbox.size > 0) lines.push(`<span class="alert">❗ ${inbox.size} WAITING ON YOU</span>`);
   return lines;
 }
