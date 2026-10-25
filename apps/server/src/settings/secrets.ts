@@ -15,14 +15,30 @@ export interface SecretStore {
   status(providerIds: readonly string[]): KeyStatus;
 }
 
-const SecretsFileSchema = z.object({ version: z.literal(1), keys: z.record(z.string(), z.string()) });
+/** On-disk shape of the keys, shared by the plain and the encrypted store. */
+export const SecretsFileSchema = z.object({ version: z.literal(1), keys: z.record(z.string(), z.string()) });
 const VISIBLE_KEY_CHARS = 4;
+
+export function serializeSecrets(keys: ReadonlyMap<string, string>): string {
+  return JSON.stringify({ version: 1, keys: Object.fromEntries(keys) });
+}
+
+/** Whether each provider has a key, and its last 4 characters; never the key itself. */
+export function keyStatus(keys: ReadonlyMap<string, string>, providerIds: readonly string[]): KeyStatus {
+  return Object.fromEntries(providerIds.map((id) => {
+    const key = keys.get(id);
+    return [id, key ? { isSet: true, last4: key.slice(-VISIBLE_KEY_CHARS) } : { isSet: false }];
+  }));
+}
 
 /**
  * Dev-setup store: a JSON file only your user account can read (mode 0600). The desktop
  * app replaces this with keys encrypted by the OS keychain (Electron safeStorage).
  */
 export class FileSecretStore implements SecretStore {
+  /** Saves run one after another, so an older snapshot can never land on top of a newer one. */
+  private writes: Promise<void> = Promise.resolve();
+
   private constructor(private readonly file: string, private readonly keys: Map<string, string>) {}
 
   static async open(dir: string, log: Pick<Console, 'warn'> = console): Promise<FileSecretStore> {
@@ -52,13 +68,12 @@ export class FileSecretStore implements SecretStore {
   }
 
   status(providerIds: readonly string[]): KeyStatus {
-    return Object.fromEntries(providerIds.map((id) => {
-      const key = this.keys.get(id);
-      return [id, key ? { isSet: true, last4: key.slice(-VISIBLE_KEY_CHARS) } : { isSet: false }];
-    }));
+    return keyStatus(this.keys, providerIds);
   }
 
   private persist(): Promise<void> {
-    return writeFileAtomic(this.file, JSON.stringify({ version: 1, keys: Object.fromEntries(this.keys) }));
+    const data = serializeSecrets(this.keys);
+    this.writes = this.writes.catch(() => undefined).then(() => writeFileAtomic(this.file, data));
+    return this.writes;
   }
 }

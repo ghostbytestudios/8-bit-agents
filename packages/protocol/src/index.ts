@@ -4,6 +4,9 @@
  */
 import { z } from 'zod';
 
+/** The product name people see: window title, top bar, installer, data folder. */
+export const APP_NAME = '8Bit Agents';
+
 export const MAX_TEXT = 10_000;
 
 const id = z.string().min(1).max(128);

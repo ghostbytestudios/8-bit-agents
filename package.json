@@ -11,7 +11,9 @@
     "server": "npm run dev -w @harness/server",
     "build": "npm run build -w @harness/client",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "vitest run"
+    "test": "vitest run",
+    "desktop": "npm run build && npm run build -w @harness/desktop && npm run start -w @harness/desktop",
+    "desktop:dist": "npm run build && npm run build -w @harness/desktop && npm run dist -w @harness/desktop"
   },
   "devDependencies": {
     "vitest": "^5.0.5"

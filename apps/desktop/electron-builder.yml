@@ -1,0 +1,42 @@
+appId: com.ghostbytestudios.eightbitagents
+productName: 8Bit Agents
+copyright: Copyright © 2026 Ghostbyte Studios
+directories:
+  output: release
+# Everything is bundled into dist/, so no node_modules ship with the app.
+files:
+  - dist/**/*
+  - package.json
+  - "!dist/**/*.map"
+asar: true
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+win:
+  target: nsis
+  artifactName: 8Bit-Agents-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    - target: dmg
+      arch: universal
+  category: public.app-category.developer-tools
+  hardenedRuntime: true
+  artifactName: 8Bit-Agents-${version}-mac.${ext}
+linux:
+  target: AppImage
+  category: Development
+  artifactName: 8Bit-Agents-${version}-linux-${arch}.${ext}
+publish:
+  provider: github
+  owner: ghostbytestudios
+  repo: 8-bit-harness
+  releaseType: draft

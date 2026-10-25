@@ -62,6 +62,17 @@ afterEach(async () => {
 });
 
 describe('harness server', () => {
+  it('stops the active run on shutdown so a new one can start', async () => {
+    const { hub } = await boot();
+    expect(await hub.handle({ type: 'run.start', goal: 'first' })).toMatchObject({ ok: true });
+    expect(await hub.handle({ type: 'run.start', goal: 'second' })).toMatchObject({ ok: false });
+
+    hub.stopActiveRun();
+    // The run winds down asynchronously; a new one is accepted once it has.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await hub.handle({ type: 'run.start', goal: 'third' })).toMatchObject({ ok: true });
+  });
+
   it('refuses browsers from other origins', async () => {
     const { url } = await boot();
     await expect(open(url, 'https://evil.example')).rejects.toThrow(/403|Unexpected server response/);

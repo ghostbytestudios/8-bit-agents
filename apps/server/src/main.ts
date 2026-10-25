@@ -5,17 +5,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AppSettings } from '@harness/protocol';
+import { APP_NAME } from '@harness/protocol';
+import { adoptLegacyDataDir, appDataDir, defaultWorkspace, HARNESS_HOST, legacyAppDataDir, startHarness } from './app';
 import { ConfigError, loadConfig } from './config';
-import { RunHub } from './hub';
-import { LiveRun } from './liveRun';
-import { startServer } from './server';
-import { appDataDir } from './settings/files';
-import { FileSecretStore } from './settings/secrets';
-import { SettingsService } from './settings/service';
-import { SettingsStore, defaultSettings, settingsFromLegacyConfig } from './settings/store';
+import { defaultSettings, settingsFromLegacyConfig } from './settings/store';
 
-/** Local-only unless you deliberately change it. */
-const HOST = '127.0.0.1';
 const PORT = Number(process.env.HARNESS_PORT ?? 8787);
 /** Pages allowed to open the socket: the dev client (the desktop app passes its own). */
 const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
@@ -24,9 +18,6 @@ const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const LEGACY_CONFIG_PATH = process.env.HARNESS_CONFIG ?? path.join(REPO_ROOT, 'harness.config.json');
 /** Read by apps/client/vite.config.ts; gitignored. */
 const TOKEN_PATH = path.join(REPO_ROOT, '.harness', 'session-token');
-const DEFAULT_WORKSPACE = path.join(os.homedir(), 'Harness', 'workspace');
-/** Kept out of agent shells in addition to the pattern-based scrub. */
-const CREDENTIAL_ENV_NAMES = ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'OPENAI_API_KEY', 'OPENROUTER_API_KEY', 'GROQ_API_KEY'];
 
 /**
  * A fresh random token per server start, readable only by your user. The Vite dev proxy
@@ -40,7 +31,7 @@ async function writeSessionToken(): Promise<string> {
 }
 
 function initialSettings(): AppSettings {
-  if (!existsSync(LEGACY_CONFIG_PATH)) return defaultSettings(DEFAULT_WORKSPACE);
+  if (!existsSync(LEGACY_CONFIG_PATH)) return defaultSettings(defaultWorkspace());
   const { config } = loadConfig(LEGACY_CONFIG_PATH);
   console.info(`Imported ${LEGACY_CONFIG_PATH} into Settings (enter API keys again in Settings).`);
   return settingsFromLegacyConfig(config, path.resolve(REPO_ROOT, config.workspace));
@@ -52,21 +43,18 @@ async function main(): Promise<void> {
     throw new ConfigError(`HARNESS_CONFIG points to ${LEGACY_CONFIG_PATH}, which does not exist.`);
   }
   const dataDir = appDataDir();
-  const store = await SettingsStore.open(dataDir, initialSettings);
-  const secrets = await FileSecretStore.open(dataDir);
-  const settings = new SettingsService({
-    store,
-    secrets,
-    env: process.env,
+  if (!process.env.HARNESS_DATA_DIR) adoptLegacyDataDir(dataDir, legacyAppDataDir());
+  const harness = await startHarness({
     dataDir,
+    port: PORT,
+    allowedOrigins: ALLOWED_ORIGINS,
+    sessionToken: await writeSessionToken(),
+    initialSettings,
     protectedFolders: [os.homedir(), REPO_ROOT, dataDir],
   });
-  const hub = new RunHub((emit) => new LiveRun({ settings, credentialNames: CREDENTIAL_ENV_NAMES, emit }), settings);
-  const sessionToken = await writeSessionToken();
-  const server = await startServer({ hub, host: HOST, port: PORT, allowedOrigins: ALLOWED_ORIGINS, sessionToken });
 
-  const { roles, workspace, limits } = store.current;
-  console.info(`Harness server on ws://${HOST}:${server.port}/ws`);
+  const { roles, workspace, limits } = harness.settings.settings;
+  console.info(`${APP_NAME} server on ws://${HARNESS_HOST}:${harness.port}/ws`);
   console.info(`Settings: ${dataDir}`);
   for (const [role, { provider, model }] of Object.entries(roles)) console.info(`  ${role.padEnd(9)} → ${provider} / ${model}`);
   console.info(`Workspace: ${workspace}`);

@@ -97,10 +97,10 @@ function toTurn(response: Anthropic.Beta.BetaMessage, requestedModel: string): A
 function toProviderError(error: unknown, model: string): Error {
   if (error instanceof Anthropic.APIUserAbortError) return error;
   if (error instanceof Anthropic.AuthenticationError) {
-    return new ProviderError('Claude rejected the credentials. Set ANTHROPIC_API_KEY (or run `ant auth login`) and restart the server.');
+    return new ProviderError('Claude rejected the API key. Check it in Settings › Models.');
   }
   if (error instanceof Anthropic.PermissionDeniedError) return new ProviderError(`This Claude account can't use ${model}.`);
-  if (error instanceof Anthropic.NotFoundError) return new ProviderError(`Claude doesn't know the model "${model}". Check harness.config.json.`);
+  if (error instanceof Anthropic.NotFoundError) return new ProviderError(`Claude doesn't know the model "${model}". Check the model name in Settings › Models.`);
   if (error instanceof Anthropic.RateLimitError) return new ProviderError('Claude rate limit reached; try again shortly.', true);
   if (error instanceof Anthropic.BadRequestError) return new ProviderError(`Claude rejected the request: ${error.message}`);
   if (error instanceof Anthropic.APIConnectionError) return new ProviderError("Couldn't reach the Claude API.", true);

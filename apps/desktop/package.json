@@ -1,0 +1,27 @@
+{
+  "name": "@harness/desktop",
+  "productName": "8Bit Agents",
+  "private": true,
+  "version": "0.1.0",
+  "description": "An 8-bit office where AI agents work on your goals.",
+  "author": "Ghostbyte Studios <ghxstbytestudios@gmail.com>",
+  "homepage": "https://github.com/ghostbytestudios/8-bit-harness",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "electron .",
+    "dist": "electron-builder",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@harness/protocol": "^0.0.0",
+    "@harness/server": "^0.0.0",
+    "@types/node": "^26.6.5",
+    "electron": "44.9.3",
+    "electron-builder": "26.17.0",
+    "electron-updater": "6.8.10",
+    "esbuild": "0.28.2",
+    "typescript": "^7.0.2",
+    "zod": "^4.6.7"
+  }
+}

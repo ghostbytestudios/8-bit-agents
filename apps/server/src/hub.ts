@@ -58,6 +58,11 @@ export class RunHub {
     return () => this.clients.delete(send);
   }
 
+  /** Stops the active run, if any (used when the app shuts down). */
+  stopActiveRun(): void {
+    if (this.isRunning) this.run?.stop();
+  }
+
   /** `reply` reaches only the client that sent the command (e.g. its connection test result). */
   async handle(command: HarnessCommand, reply: Send = () => undefined): Promise<CommandOutcome> {
     switch (command.type) {

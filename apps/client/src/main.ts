@@ -1,3 +1,4 @@
+import '@fontsource/press-start-2p/400.css';
 import './style.css';
 import { EnvelopeSchema, HarnessCommandSchema, type AppSettings, type EventFeed, type HarnessCommand } from '@harness/protocol';
 import { Color, Mesh, MeshBasicMaterial, RingGeometry, Scene, Vector3, type Camera } from 'three';
@@ -11,6 +12,7 @@ import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
 import { SettingsPanel } from './hud/settingsPanel';
 import { TopBar } from './hud/topBar';
 import { SocketFeed, probe } from './net/socketFeed';
+import { serverUrl } from './net/desktop';
 import { MockRun } from './sim/mockRun';
 import { WorldStore } from './state/world';
 import { Crowd } from './world/crowd';
@@ -26,8 +28,6 @@ const WHEEL_STEP = 50;
 const PAN_SPEED = 6;
 const MAX_FRAME_DT = 0.1;
 const DOOR_OUTSIDE = new Vector3(FRONT_DOOR_OUTSIDE.x, 0, FRONT_DOOR_OUTSIDE.z);
-/** The harness server, through the Vite dev proxy (same origin as this page). */
-const SERVER_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
 /** How long to wait for the server before falling back to the in-browser mock. */
 const PROBE_TIMEOUT_MS = 1_500;
 /** A press that moves less than this (screen px) is a click, not a pan. */
@@ -230,7 +230,7 @@ interface FeedChoice {
 /** The live server when one answers; otherwise (or with ?mock) the in-browser mock run. */
 async function chooseFeed(): Promise<FeedChoice> {
   const wantsMock = new URLSearchParams(location.search).has('mock');
-  const socket = wantsMock ? null : await probe(SERVER_URL, PROBE_TIMEOUT_MS);
+  const socket = wantsMock ? null : await probe(serverUrl(), PROBE_TIMEOUT_MS);
   if (socket) return { feed: socket, socket, mock: null, isServerOffline: false };
   const mock = new MockRun();
   return { feed: mock, socket: null, mock, isServerOffline: !wantsMock };

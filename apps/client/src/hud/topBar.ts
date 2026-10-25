@@ -1,3 +1,4 @@
+import { APP_NAME } from '@harness/protocol';
 import type { WorldState } from '../state/world';
 import type { ConnectionStatus } from '../net/socketFeed';
 import { button, el } from './dom';
@@ -38,7 +39,8 @@ export class TopBar {
   private isConnected = false;
 
   constructor(root: HTMLElement, handlers: TopBarHandlers, private readonly mode: TopBarMode) {
-    const title = mode.isSimulated ? `HARNESS · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}` : 'HARNESS';
+    const name = APP_NAME.toUpperCase();
+    const title = mode.isSimulated ? `${name} · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}` : name;
     this.alert = button('topbar__alert', '', handlers.onOpenInbox);
     this.stop = button('pixel-button pixel-button--danger', 'STOP', handlers.onStop);
     const settings = button('pixel-button topbar__settings', '⚙ SETTINGS', handlers.onOpenSettings);

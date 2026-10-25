@@ -33,3 +33,6 @@ Thumbs.db
 /harness.config.json
 /workspace/
 /.harness/
+
+# Desktop installers
+apps/desktop/release/

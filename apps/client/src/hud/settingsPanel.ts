@@ -204,7 +204,7 @@ export class SettingsPanel {
       return;
     }
     if (!this.handlers.send({ type: 'settings.update', settings: parsed.data })) {
-      this.setNotice('Not connected to the Harness server.', 'error');
+      this.setNotice('Not connected to the server.', 'error');
       return;
     }
     this.setNotice('Saving…');
@@ -299,7 +299,7 @@ export class SettingsPanel {
         return;
       }
       input.value = '';
-      if (!this.handlers.send({ type: 'provider.setKey', providerId: provider.id, key })) this.setNotice('Not connected to the Harness server.', 'error');
+      if (!this.handlers.send({ type: 'provider.setKey', providerId: provider.id, key })) this.setNotice('Not connected to the server.', 'error');
     });
     row.append(input, saveKey);
     if (status?.isSet) row.append(button('pixel-button', 'CLEAR', () => this.handlers.send({ type: 'provider.clearKey', providerId: provider.id })));
