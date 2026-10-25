@@ -7,6 +7,7 @@
   "author": "Ghostbyte Studios <ghxstbytestudios@gmail.com>",
   "homepage": "https://github.com/ghostbytestudios/8-bit-agents",
   "main": "dist/main.cjs",
+  "desktopName": "8bit-agents.desktop",
   "scripts": {
     "build": "node build.mjs",
     "start": "electron .",
