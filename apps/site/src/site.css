@@ -877,6 +877,64 @@ kbd {
   font-size: 13px;
 }
 
+/* Footer "Cookie settings": a button that reads like the links beside it. */
+.link-button {
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--text);
+}
+
+/* Cookie consent: a small panel in the corner that never blocks the page. */
+.consent {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 20;
+  max-width: 380px;
+  padding: 18px 20px 20px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow:
+    0 0 0 3px var(--edge),
+    0 12px 32px rgb(0 0 0 / 0.45);
+}
+
+.consent h2 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.consent p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+@media (max-width: 520px) {
+  .consent {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    max-width: none;
+  }
+}
+
 /* Privacy page */
 .prose {
   max-width: 72ch;

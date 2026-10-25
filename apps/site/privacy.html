@@ -1,15 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js): website visits only. The app and the demo office send nothing. -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K7LF2M6VW3"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-K7LF2M6VW3');
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Privacy · 8Bit Agents</title>
@@ -29,7 +20,7 @@
     <main id="main" class="prose">
       <h1>Privacy</h1>
       <p>Last updated 25 October 2026. In short: the app collects nothing about you. This website counts visits with
-        Google Analytics.</p>
+        Google Analytics, but only if you say yes.</p>
 
       <h2>The app</h2>
       <ul>
@@ -53,11 +44,17 @@
       <h2>This website</h2>
       <ul>
         <li>
-          <strong>Visitor statistics:</strong> this website uses Google Analytics to count visits and see which pages
-          people read and where they came from. Google sets cookies to tell repeat visits apart and receives your IP
-          address, browser and rough location. We only look at the totals and never try to identify anyone. See
-          <a href="https://policies.google.com/technologies/partner-sites">how Google uses this data</a>, or opt out
-          with Google's <a href="https://tools.google.com/dlpage/gaoptout">opt-out add-on</a> or an ad blocker.
+          <strong>Visitor statistics, only with your OK:</strong> on your first visit the site asks whether it may use
+          Google Analytics. Until you press Accept, nothing is loaded from Google and no cookies are set. If you accept,
+          Google sets cookies to tell repeat visits apart and receives your IP address, browser and rough location, so we
+          can see how many people visit, which pages they read and where they came from. We only look at the totals and
+          never try to identify anyone. See <a href="https://policies.google.com/technologies/partner-sites">how Google
+          uses this data</a>.
+        </li>
+        <li>
+          <strong>Changing your mind:</strong> press <em>Cookie settings</em> at the bottom of any page. Saying no
+          deletes the Google Analytics cookies. Your answer is kept in your browser for 13 months, then the site asks
+          again.
         </li>
         <li>No ads, and nothing is sold.</li>
         <li>Fonts and images are served from this site, not from third parties.</li>
@@ -69,8 +66,8 @@
           GitHub's privacy statement.
         </li>
         <li>
-          The demo office runs entirely in your browser. Nothing you click or answer in it is sent anywhere, though
-          Google Analytics still counts the visit to the page.
+          The demo office runs entirely in your browser. Nothing you click or answer in it is sent anywhere, even if
+          you accepted Google Analytics.
         </li>
       </ul>
 
@@ -86,6 +83,7 @@
         <a href="./">Home</a>
         <a href="https://github.com/ghostbytestudios/8-bit-agents/blob/main/LICENSE">License (GPL-3.0)</a>
         <a href="https://github.com/ghostbytestudios/8-bit-agents">GitHub</a>
+        <button type="button" class="link-button" data-cookie-settings>Cookie settings</button>
       </nav>
     </footer>
 

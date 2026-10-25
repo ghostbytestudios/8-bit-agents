@@ -1,5 +1,6 @@
 import '@fontsource/press-start-2p/400.css';
 import './site.css';
+import { setUpAnalytics } from './analytics';
 import {
   detectPlatform,
   downloadsFrom,
@@ -123,5 +124,6 @@ async function setUpDownloads(): Promise<void> {
   renderDownloads(await latestRelease(), visitor);
 }
 
+setUpAnalytics();
 setUpDemo();
 void setUpDownloads();
