@@ -1,6 +1,7 @@
 # Planning & documentation (kept local)
 /GAME_PLAN.md
 /*.md
+!/README.md
 /docs/
 # Note: nested .md files are NOT ignored on purpose — skills (SKILL.md) and plugins need them.
 
