@@ -36,6 +36,12 @@
       </symbol>
     </svg>
 
+    <a class="announce" href="#download">
+      <span class="announce__tag">NEW</span>
+      <span id="announce-text">The first beta is out for Windows, macOS and Linux</span>
+      <span class="announce__arrow" aria-hidden="true">→</span>
+    </a>
+
     <header class="site-header">
       <a class="brand" href="./" aria-label="8Bit Agents home">
         <svg class="sprite" style="--hair: #3e2731; --skin: #e8b796; --shirt: #feae34" aria-hidden="true"><use href="#agent" /></svg>
@@ -52,27 +58,34 @@
 
     <main id="main">
       <section class="hero" aria-labelledby="hero-title">
-        <p class="eyebrow">A pixel office for AI agents</p>
-        <h1 id="hero-title">Watch your AI team build it.</h1>
+        <p class="tag">A pixel office for AI agents</p>
+        <h1 id="hero-title">Watch your AI team <span class="hero__highlight">build it.</span></h1>
         <p class="lede">
           Give 8Bit Agents a goal. The Architect sketches a plan on the whiteboard, the Boss hands out
           tasks, and Workers build at their desks. You watch every step and answer their questions.
-          Bring your own model: Claude, OpenAI, or one running on your own computer.
         </p>
         <div class="actions">
           <a class="button" id="hero-download" href="#download">Download</a>
-          <a class="button button--ghost" href="#how">How it works</a>
+          <a class="button button--ghost" href="#demo">▶ Play the demo</a>
         </div>
-        <p class="fineprint">Windows · macOS · Linux · No account needed</p>
+        <p class="fineprint">Windows · macOS · Linux · No account · Bring Claude, OpenAI or a local model</p>
       </section>
 
       <section class="demo" id="demo" data-state="idle" aria-labelledby="demo-title">
         <h2 id="demo-title" class="visually-hidden">Live demo</h2>
-        <div class="demo__screen">
-          <iframe id="demo-frame" title="Live demo: the 8Bit Agents office with pretend agents at work" loading="eager"></iframe>
-          <div class="demo__poster">
-            <button class="button" id="demo-start" type="button">▶ Play the demo</button>
-            <p>Runs in your browser. No sign-up.</p>
+        <ol class="demo__roles" aria-label="Who's in the office">
+          <li style="--role: var(--you)"><span>You</span> set the goal</li>
+          <li style="--role: var(--architect)"><span>Architect</span> plans</li>
+          <li style="--role: var(--boss)"><span>Boss</span> assigns</li>
+          <li style="--role: var(--worker)"><span>Workers</span> build</li>
+        </ol>
+        <div class="demo__glow">
+          <div class="demo__screen">
+            <iframe id="demo-frame" title="Live demo: the 8Bit Agents office with pretend agents at work" loading="eager"></iframe>
+            <div class="demo__poster">
+              <button class="button" id="demo-start" type="button">▶ Play the demo</button>
+              <p>Runs in your browser. No sign-up.</p>
+            </div>
           </div>
         </div>
         <p class="demo__caption">
@@ -83,37 +96,50 @@
       </section>
 
       <section class="section" id="how" aria-labelledby="how-title">
-        <h2 id="how-title">How it works</h2>
+        <p class="tag">How it works</p>
+        <h2 id="how-title">From one sentence to working code</h2>
         <ol class="steps">
           <li class="card">
             <svg class="sprite sprite--big" style="--hair: #c28569; --skin: #e8b796; --shirt: #e43b44" aria-hidden="true"><use href="#agent" /></svg>
-            <h3>1. You set the goal</h3>
+            <p class="card__label">01 · You</p>
+            <h3>Set the goal</h3>
             <p>Type what you want built, then set a budget so a run never spends more than you planned.</p>
           </li>
           <li class="card">
             <svg class="sprite sprite--big" style="--hair: #262b44; --skin: #c28569; --shirt: #0099db" aria-hidden="true"><use href="#agent" /></svg>
-            <h3>2. The Architect plans</h3>
+            <p class="card__label">02 · Architect</p>
+            <h3>Draws the plan</h3>
             <p>The Architect reads what's there and draws up the design on the whiteboard: the parts, the order and the risks.</p>
           </li>
           <li class="card">
             <svg class="sprite sprite--big" style="--hair: #3e2731; --skin: #e8b796; --shirt: #feae34" aria-hidden="true"><use href="#agent" /></svg>
-            <h3>3. The Boss assigns</h3>
+            <p class="card__label">03 · Boss</p>
+            <h3>Hands out tasks</h3>
             <p>The Boss turns the plan into tasks and sends Workers to their desks, several at once.</p>
           </li>
           <li class="card">
             <svg class="sprite sprite--big" style="--hair: #733e39; --skin: #e8b796; --shirt: #63c74d" aria-hidden="true"><use href="#agent" /></svg>
-            <h3>4. Workers build</h3>
+            <p class="card__label">04 · Workers</p>
+            <h3>Build and test</h3>
             <p>Workers read, write and test code in a folder you choose. Anything that runs a command waits in your inbox for your OK.</p>
           </li>
         </ol>
       </section>
 
-      <section class="section" id="models" aria-labelledby="models-title">
-        <h2 id="models-title">Use the model you like</h2>
-        <p class="section__lede">
-          Pick a model for each role: a strong one for the Boss and Architect, a quick, cheap one for
-          the Workers. Local models run on your own hardware at no cost per run.
-        </p>
+      <section class="section models" id="models" aria-labelledby="models-title">
+        <div>
+          <p class="tag">Models</p>
+          <h2 id="models-title">Use the model you like</h2>
+          <p class="section__lede">
+            Pick a model for each role: a strong one for the Boss and Architect, a quick, cheap one for
+            the Workers. Local models run on your own hardware at no cost per run.
+          </p>
+        </div>
+        <div class="roster" aria-label="Example team setup">
+          <div class="roster__row"><span class="roster__role" style="--role: var(--boss)">BOSS</span><span>Claude Opus</span><span class="roster__where">cloud</span></div>
+          <div class="roster__row"><span class="roster__role" style="--role: var(--architect)">ARCHITECT</span><span>Claude Opus</span><span class="roster__where">cloud</span></div>
+          <div class="roster__row"><span class="roster__role" style="--role: var(--worker)">WORKERS ×4</span><span>Qwen 2.5 Coder</span><span class="roster__where roster__where--local">local · $0</span></div>
+        </div>
         <ul class="pills" aria-label="Supported model providers">
           <li>Claude</li>
           <li>OpenAI</li>
@@ -126,29 +152,55 @@
       </section>
 
       <section class="section" id="safety" aria-labelledby="safety-title">
+        <p class="tag">Safety</p>
         <h2 id="safety-title">Your computer, your keys, your call</h2>
         <ul class="features">
-          <li class="card">
+          <li class="card feature feature--wide">
+            <div class="feature__visual" aria-hidden="true">
+              <div class="mock-inbox">
+                <p class="mock-inbox__who"><span style="--role: var(--worker)"></span>WORKER 2 asks</p>
+                <p>Run this command?</p>
+                <code>npm test</code>
+                <div class="mock-inbox__buttons"><span class="mock-button mock-button--yes">APPROVE</span><span class="mock-button">DENY</span></div>
+              </div>
+            </div>
+            <div>
+              <p class="card__label">Human in the loop</p>
+              <h3>You approve commands</h3>
+              <p>Every shell command shows up in your inbox first, exactly as it will run. Approve it, or say no.</p>
+            </div>
+          </li>
+          <li class="card feature">
+            <p class="card__label">Keys</p>
             <h3>Keys stay on your computer</h3>
-            <p>API keys are encrypted by your operating system's keychain and only ever sent to the provider you chose.</p>
+            <p>Encrypted by your system keychain and only ever sent to the provider you chose.</p>
           </li>
-          <li class="card">
-            <h3>No account</h3>
-            <p>Download it and go. No sign-up, no login, no analytics.</p>
-          </li>
-          <li class="card">
+          <li class="card feature">
+            <p class="card__label">Sandbox</p>
             <h3>One folder, nothing else</h3>
             <p>Agents can only read and write inside the workspace folder you pick.</p>
           </li>
-          <li class="card">
-            <h3>You approve commands</h3>
-            <p>Every shell command shows up in your inbox first. Approve it, or say no.</p>
+          <li class="card feature feature--wide">
+            <div class="feature__visual" aria-hidden="true">
+              <div class="mock-budget">
+                <p><span>THIS RUN</span><span>$1.24 / $5.00</span></p>
+                <div class="mock-budget__bar"><span></span></div>
+                <p><span>TOKENS</span><span>412,880 / 3M</span></p>
+              </div>
+            </div>
+            <div>
+              <p class="card__label">Budgets</p>
+              <h3>Spending limits</h3>
+              <p>Each run stops at the dollar and token limits you set, and the cost so far is always on screen.</p>
+            </div>
           </li>
-          <li class="card">
-            <h3>Spending limits</h3>
-            <p>Each run stops at the dollar and token limits you set, and the cost so far is always on screen.</p>
+          <li class="card feature">
+            <p class="card__label">Privacy</p>
+            <h3>No account</h3>
+            <p>Download it and go. No sign-up, no login, no analytics.</p>
           </li>
-          <li class="card">
+          <li class="card feature">
+            <p class="card__label">Style</p>
             <h3>Make it yours</h3>
             <p>Name your team, pick their shirt colors, and switch between night, day and high-contrast themes.</p>
           </li>
@@ -156,6 +208,7 @@
       </section>
 
       <section class="section" id="faq" aria-labelledby="faq-title">
+        <p class="tag">FAQ</p>
         <h2 id="faq-title">Questions</h2>
         <div class="faq">
           <details>
@@ -199,7 +252,8 @@
       </section>
 
       <section class="section" id="download" aria-labelledby="download-title">
-        <h2 id="download-title">Download</h2>
+        <p class="tag">Download</p>
+        <h2 id="download-title">Get the office</h2>
         <p class="section__lede">Early beta. Bring an API key or a local model, and you're ready.</p>
         <ul class="downloads">
           <li class="card download">
@@ -219,6 +273,20 @@
           </li>
         </ul>
         <p class="release-status" id="release-status" role="status"></p>
+      </section>
+
+      <section class="cta" aria-labelledby="cta-title">
+        <div class="cta__crew" aria-hidden="true">
+          <svg class="sprite sprite--big" style="--hair: #262b44; --skin: #c28569; --shirt: #0099db"><use href="#agent" /></svg>
+          <svg class="sprite sprite--big" style="--hair: #3e2731; --skin: #e8b796; --shirt: #feae34"><use href="#agent" /></svg>
+          <svg class="sprite sprite--big" style="--hair: #733e39; --skin: #e8b796; --shirt: #63c74d"><use href="#agent" /></svg>
+          <svg class="sprite sprite--big" style="--hair: #c28569; --skin: #e8b796; --shirt: #b55088"><use href="#agent" /></svg>
+        </div>
+        <h2 id="cta-title">Your team is waiting at their desks.</h2>
+        <div class="actions">
+          <a class="button" href="#download">Download</a>
+          <a class="button button--ghost" href="https://github.com/ghostbytestudios/8-bit-agents">View on GitHub</a>
+        </div>
       </section>
     </main>
 

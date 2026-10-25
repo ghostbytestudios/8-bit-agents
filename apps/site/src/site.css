@@ -227,31 +227,43 @@ main {
   padding: 0 var(--gutter);
 }
 
+/* Centered over the demo, so the eye drops straight from the promise into the office. */
 .hero {
-  padding: clamp(56px, 10vw, 120px) 0 clamp(40px, 6vw, 64px);
-  max-width: 880px;
+  display: grid;
+  justify-items: center;
+  padding: clamp(56px, 9vw, 112px) 0 clamp(40px, 5vw, 56px);
+  text-align: center;
 }
 
-.eyebrow {
-  margin: 0 0 22px;
+/* Section labels: a dashed chip, like a sticky note on the office wall. */
+.tag {
+  display: inline-block;
+  margin: 0 0 20px;
+  padding: 7px 10px;
   color: var(--worker);
-  font-size: 11px;
+  font: 10px/1 var(--pixel-font);
   text-transform: uppercase;
+  border: 2px dashed currentColor;
 }
 
-.eyebrow::before {
+.tag::before {
   content: '▸ ';
 }
 
 h1 {
-  font-size: clamp(28px, 5.6vw, 58px);
+  max-width: 16ch;
+  font-size: clamp(28px, 5.6vw, 60px);
   line-height: 1.25;
   text-shadow: 4px 4px 0 var(--panel);
 }
 
+.hero__highlight {
+  color: var(--accent);
+}
+
 .lede {
   margin: 28px 0 36px;
-  max-width: 64ch;
+  max-width: 60ch;
   color: var(--muted);
   font-size: clamp(17px, 1.6vw, 19px);
 }
@@ -259,7 +271,42 @@ h1 {
 .actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 18px;
+}
+
+/* ---------- Announcement bar ---------- */
+
+.announce {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 9px var(--gutter);
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: none;
+  background: var(--panel);
+}
+
+.announce__tag {
+  padding: 4px 6px;
+  font: 8px/1 var(--pixel-font);
+  color: var(--ink);
+  background: var(--worker);
+}
+
+.announce__arrow {
+  color: var(--accent);
+  transition: transform 120ms steps(2);
+}
+
+.announce:hover {
+  color: var(--accent);
+}
+
+.announce:hover .announce__arrow {
+  transform: translateX(4px);
 }
 
 .fineprint {
@@ -272,6 +319,49 @@ h1 {
 
 .demo {
   position: relative;
+}
+
+/* A legend strip naming who's who, so visitors know what they're looking at. */
+.demo__roles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  border-top: 3px solid var(--panel);
+}
+
+.demo__roles li {
+  padding: 14px 4px 0;
+  color: var(--muted);
+  font-size: 14px;
+  border-top: 3px solid var(--role);
+  margin-top: -3px;
+}
+
+.demo__roles span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--role);
+  font: 10px var(--pixel-font);
+  text-transform: uppercase;
+}
+
+/* The office glows like a monitor in a dark room. */
+.demo__glow {
+  position: relative;
+}
+
+.demo__glow::before {
+  content: '';
+  position: absolute;
+  inset: -6% -4%;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgb(0 153 219 / 0.35), transparent 60%),
+    radial-gradient(ellipse at 75% 60%, rgb(254 174 52 / 0.28), transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
 }
 
 .demo__screen {
@@ -398,6 +488,13 @@ kbd {
   font-size: 15px;
 }
 
+.card .card__label {
+  margin-bottom: 10px;
+  color: var(--off);
+  font: 9px var(--pixel-font);
+  text-transform: uppercase;
+}
+
 /* How it works: a left-to-right chain of desks. */
 .steps {
   display: grid;
@@ -433,7 +530,59 @@ kbd {
 .steps .card:nth-child(3) { box-shadow: 0 0 0 3px var(--boss); }
 .steps .card:nth-child(4) { box-shadow: 0 0 0 3px var(--worker); }
 
-/* Models */
+/* Models: copy on the left, an example team on the right, providers below. */
+.models {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 56px;
+  align-items: center;
+}
+
+.models .pills {
+  grid-column: 1 / -1;
+}
+
+.roster {
+  display: grid;
+  gap: 3px;
+  padding: 3px;
+  background: var(--edge);
+  box-shadow: 10px 10px 0 rgb(0 0 0 / 0.35);
+}
+
+.roster__row {
+  display: grid;
+  grid-template-columns: 9.5em 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--panel);
+  font-size: 15px;
+}
+
+.roster__role {
+  color: var(--role);
+  font: 10px var(--pixel-font);
+}
+
+.roster__role::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+  background: var(--role);
+}
+
+.roster__where {
+  color: var(--off);
+  font-size: 13px;
+}
+
+.roster__where--local {
+  color: var(--worker);
+}
+
 .pills {
   display: flex;
   flex-wrap: wrap;
@@ -469,16 +618,139 @@ kbd {
   list-style: none;
 }
 
-.features .card:nth-child(1),
-.features .card:nth-child(4) {
+/* The two headline promises are wide and show the actual UI they describe. */
+.feature--wide {
   grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 28px;
   background: linear-gradient(135deg, #2e3555, var(--panel));
 }
 
-.features .card:nth-child(1) h3,
-.features .card:nth-child(4) h3 {
+.feature--wide h3 {
   font-size: 14px;
   color: var(--accent);
+}
+
+.feature {
+  transition: transform 120ms steps(3), box-shadow 120ms steps(3);
+}
+
+.feature:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 0 0 0 3px var(--edge), 6px 6px 0 3px rgb(0 0 0 / 0.4);
+}
+
+.feature__visual {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: repeating-conic-gradient(var(--ink) 0 25%, var(--floor) 0 50%) 0 0 / 16px 16px;
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+/* Small replicas of the in-app inbox card and budget readout. */
+.mock-inbox,
+.mock-budget {
+  width: 100%;
+  max-width: 260px;
+  padding: 14px;
+  background: var(--panel);
+  box-shadow: 0 0 0 3px var(--edge), 6px 6px 0 3px rgb(0 0 0 / 0.4);
+}
+
+.card .mock-inbox p,
+.card .mock-budget p {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.card .mock-inbox .mock-inbox__who {
+  margin-bottom: 8px;
+  color: var(--off);
+  font: 8px var(--pixel-font);
+}
+
+.mock-inbox__who span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  background: var(--role);
+}
+
+.mock-inbox code {
+  display: block;
+  margin: 8px 0 12px;
+  padding: 8px;
+  color: var(--worker);
+  background: var(--ink);
+  font-size: 13px;
+}
+
+.mock-inbox__buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.mock-button {
+  padding: 7px 9px;
+  font: 8px var(--pixel-font);
+  color: var(--ink);
+  background: var(--text);
+  box-shadow: inset -2px -2px 0 var(--off);
+}
+
+.mock-button--yes {
+  background: var(--worker);
+}
+
+.card .mock-budget p {
+  display: flex;
+  justify-content: space-between;
+  font: 8px/1.8 var(--pixel-font);
+}
+
+.mock-budget__bar {
+  height: 14px;
+  margin: 8px 0 14px;
+  background: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--edge);
+}
+
+.mock-budget__bar span {
+  display: block;
+  width: 25%;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, #f77622 8px 10px);
+}
+
+/* ---------- Closing call to action ---------- */
+
+.cta {
+  display: grid;
+  justify-items: center;
+  gap: 28px;
+  margin-top: var(--section-gap);
+  padding: clamp(40px, 6vw, 72px) var(--gutter);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(254 174 52 / 0.18), transparent 65%),
+    var(--panel);
+  box-shadow: 0 0 0 3px var(--edge), 12px 12px 0 3px rgb(0 0 0 / 0.4);
+}
+
+.cta h2 {
+  max-width: 22ch;
+  font-size: clamp(18px, 2.8vw, 30px);
+}
+
+.cta__crew {
+  display: flex;
+  gap: 18px;
+  margin-top: -84px;
+  filter: drop-shadow(3px 3px 0 var(--ink));
 }
 
 /* FAQ */
@@ -682,6 +954,28 @@ kbd {
   .features .card:nth-child(1),
   .features .card:nth-child(4) {
     grid-column: auto;
+  }
+
+  .feature--wide,
+  .models {
+    grid-template-columns: 1fr;
+  }
+
+  .demo__roles {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 18px;
+  }
+
+  .roster__row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .roster__row > span:nth-child(2) {
+    grid-row: 2;
+  }
+
+  .announce {
+    font-size: 13px;
   }
 
   .downloads {

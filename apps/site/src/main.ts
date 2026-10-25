@@ -91,6 +91,9 @@ function renderDownloads(state: ReleaseState, visitor: Platform | null): void {
     }
   }
 
+  const announce = document.getElementById('announce-text');
+  if (announce && state.kind === 'ready') announce.textContent = `${state.downloads.version} is out for Windows, macOS and Linux`;
+
   const hero = document.querySelector<HTMLAnchorElement>('#hero-download');
   if (!hero) return;
   const direct = visitor && state.kind === 'ready' ? state.downloads.links[visitor] : undefined;
