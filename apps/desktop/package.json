@@ -2,7 +2,7 @@
   "name": "@harness/desktop",
   "productName": "8Bit Agents",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An 8-bit office where AI agents work on your goals.",
   "author": "Ghostbyte Studios <ghxstbytestudios@gmail.com>",
   "homepage": "https://github.com/ghostbytestudios/8-bit-agents",

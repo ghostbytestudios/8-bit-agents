@@ -11,6 +11,15 @@ export interface ReleaseNotes {
 /** Newest first. Add an entry with every version bump; Help › What's New shows it. */
 export const CHANGELOG: readonly ReleaseNotes[] = [
   {
+    version: '0.2.0',
+    notes: [
+      "Click the filing cabinet in the War Room to browse your project's files, with what each agent read or wrote marked.",
+      'A new skill shelf in the War Room: write skills that teach the team how you like things done.',
+      'Give each skill to the Boss, the Architect or the Workers. Agents walk to the shelf to read one when it fits the work.',
+      'Skills are SKILL.md files, so skills made for Claude Code can be copied in.',
+    ],
+  },
+  {
     version: '0.1.0',
     notes: [
       'First beta of 8Bit Agents for Windows, macOS and Linux.',
