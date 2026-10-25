@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy · 8Bit Agents</title>
+    <meta name="description" content="What 8Bit Agents and this website do and don't do with your data." />
+    <meta name="theme-color" content="#181425" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="./">8BIT AGENTS</a>
+      <nav aria-label="Main">
+        <a class="button button--small" href="./#download">Download</a>
+      </nav>
+    </header>
+
+    <main id="main" class="prose">
+      <h1>Privacy</h1>
+      <p>Last updated 25 October 2026. In short: we don't collect anything about you.</p>
+
+      <h2>The app</h2>
+      <ul>
+        <li><strong>No account, no analytics.</strong> 8Bit Agents doesn't ask who you are and doesn't report what you do.</li>
+        <li>
+          <strong>Your API keys stay on your computer,</strong> encrypted with your operating system's keychain. They're
+          sent only to the model provider they belong to.
+        </li>
+        <li>
+          <strong>Your goals, files and the agents' work</strong> go to the model provider you chose (for example
+          Anthropic or OpenAI), as part of the agents' prompts. That provider's own privacy policy covers what happens
+          there. With a local model (Ollama, LM Studio), none of it leaves your computer.
+        </li>
+        <li>
+          <strong>Update checks:</strong> the app asks GitHub whether a newer version exists, and downloads it from
+          GitHub if so. GitHub sees that request like any other web request.
+        </li>
+        <li>Settings, run history and the agents' workspace are stored only on your computer.</li>
+      </ul>
+
+      <h2>This website</h2>
+      <ul>
+        <li>No cookies, no analytics, no trackers, no ads.</li>
+        <li>Fonts and images are served from this site, not from third parties.</li>
+        <li>
+          The download section asks GitHub's public API for the latest release, so the buttons point at the right files.
+        </li>
+        <li>
+          The site is hosted on GitHub Pages. GitHub may keep standard server logs, such as IP addresses; see
+          GitHub's privacy statement.
+        </li>
+        <li>The demo office runs entirely in your browser. Nothing you click or answer in it is sent anywhere.</li>
+      </ul>
+
+      <h2>Questions</h2>
+      <p>
+        Open an issue on <a href="https://github.com/ghostbytestudios/8-bit-harness/issues">GitHub</a>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Ghostbyte Studios</p>
+      <nav aria-label="Footer">
+        <a href="./">Home</a>
+        <a href="https://github.com/ghostbytestudios/8-bit-harness">GitHub</a>
+      </nav>
+    </footer>
+
+    <script type="module" src="/src/page.ts"></script>
+  </body>
+</html>

@@ -28,6 +28,10 @@ const WHEEL_STEP = 50;
 const PAN_SPEED = 6;
 const MAX_FRAME_DT = 0.1;
 const DOOR_OUTSIDE = new Vector3(FRONT_DOOR_OUTSIDE.x, 0, FRONT_DOOR_OUTSIDE.z);
+/** ?demo: the landing page's embedded office. Always the mock, and it shares the page's scroll wheel. */
+const IS_DEMO = new URLSearchParams(location.search).has('demo');
+/** Narrower than this, the demo opens on the office with the side panel closed. */
+const NARROW_DEMO_PX = 700;
 /** How long to wait for the server before falling back to the in-browser mock. */
 const PROBE_TIMEOUT_MS = 1_500;
 /** A press that moves less than this (screen px) is a click, not a pan. */
@@ -157,8 +161,13 @@ function setupInput(handlers: InputHandlers): () => { right: number; forward: nu
   });
   canvas.addEventListener('pointercancel', endDrag);
 
+  // Embedded in a page, the wheel scrolls the page until the visitor clicks into the office.
+  let isEngaged = !IS_DEMO;
+  canvas.addEventListener('pointerdown', () => (isEngaged = true));
+  if (IS_DEMO) canvas.addEventListener('pointerleave', () => (isEngaged = false));
   let wheelAccumulator = 0;
   canvas.addEventListener('wheel', (event) => {
+    if (!isEngaged) return;
     event.preventDefault();
     wheelAccumulator += event.deltaY;
     if (Math.abs(wheelAccumulator) < WHEEL_STEP) return;
@@ -227,9 +236,9 @@ interface FeedChoice {
   isServerOffline: boolean;
 }
 
-/** The live server when one answers; otherwise (or with ?mock) the in-browser mock run. */
+/** The live server when one answers; otherwise (or with ?mock / ?demo) the in-browser mock run. */
 async function chooseFeed(): Promise<FeedChoice> {
-  const wantsMock = new URLSearchParams(location.search).has('mock');
+  const wantsMock = IS_DEMO || new URLSearchParams(location.search).has('mock');
   const socket = wantsMock ? null : await probe(serverUrl(), PROBE_TIMEOUT_MS);
   if (socket) return { feed: socket, socket, mock: null, isServerOffline: false };
   const mock = new MockRun();
@@ -276,19 +285,21 @@ async function start(): Promise<void> {
     onCloseInspector: () => select(null),
     onToggleFollow: toggleFollow,
   }, feed.isSimulated);
+  // On a phone the panel would cover half the office; the inbox alert in the top bar reopens it.
+  if (IS_DEMO && window.innerWidth < NARROW_DEMO_PX) dock.closeTabs();
   nameTags.onSelect = select;
   const settingsPanel = new SettingsPanel(document.body, { send: (command) => sendCommand(feed, command) });
   const topBar = new TopBar(topBarRoot, {
     onOpenInbox: () => dock.openTab('inbox', true),
     onOpenSettings: () => settingsPanel.open(),
     onStart: (goal) => {
-      if (!sendCommand(feed, { type: 'run.start', goal })) topBar.showNotice('Not connected to the harness server.');
+      if (!sendCommand(feed, { type: 'run.start', goal })) topBar.showNotice('Not connected to the server.');
     },
     onStop: () => {
       const { runId } = world.state;
       if (runId) sendCommand(feed, { type: 'run.stop', runId });
     },
-  }, { isSimulated: feed.isSimulated, isServerOffline });
+  }, { isSimulated: feed.isSimulated, isServerOffline, isDemo: IS_DEMO });
   if (socket) {
     topBar.setConnection(socket.connection);
     socket.onStatus((status) => {

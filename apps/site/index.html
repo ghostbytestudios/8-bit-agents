@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>8Bit Agents: watch your AI team build it</title>
+    <meta name="description" content="A pixel-art office where AI agents plan, build and test your project while you watch. Use Claude, OpenAI or a model on your own computer. Runs on Windows, macOS and Linux." />
+    <meta name="theme-color" content="#181425" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="8Bit Agents: watch your AI team build it" />
+    <meta property="og:description" content="A pixel-art office where AI agents plan, build and test your project while you watch." />
+    <meta property="og:image" content="https://ghostbytestudios.github.io/8-bit-harness/poster.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <svg width="0" height="0" class="sprites" aria-hidden="true" focusable="false">
+      <symbol id="agent" viewBox="0 0 8 12" shape-rendering="crispEdges">
+        <rect x="2" y="0" width="4" height="1" fill="var(--hair)" />
+        <rect x="1" y="1" width="6" height="1" fill="var(--hair)" />
+        <rect x="1" y="2" width="6" height="3" fill="var(--skin)" />
+        <rect x="2" y="3" width="1" height="1" fill="#181425" />
+        <rect x="5" y="3" width="1" height="1" fill="#181425" />
+        <rect x="1" y="5" width="6" height="1" fill="var(--shirt)" />
+        <rect x="0" y="6" width="8" height="2" fill="var(--shirt)" />
+        <rect x="1" y="8" width="6" height="1" fill="var(--shirt)" />
+        <rect x="0" y="8" width="1" height="1" fill="var(--skin)" />
+        <rect x="7" y="8" width="1" height="1" fill="var(--skin)" />
+        <rect x="1" y="9" width="6" height="1" fill="#3a4466" />
+        <rect x="1" y="10" width="2" height="1" fill="#3a4466" />
+        <rect x="5" y="10" width="2" height="1" fill="#3a4466" />
+        <rect x="0" y="11" width="3" height="1" fill="#181425" />
+        <rect x="5" y="11" width="3" height="1" fill="#181425" />
+      </symbol>
+    </svg>
+
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="8Bit Agents home">
+        <svg class="sprite" style="--hair: #3e2731; --skin: #e8b796; --shirt: #feae34" aria-hidden="true"><use href="#agent" /></svg>
+        <span>8BIT AGENTS</span>
+      </a>
+      <nav aria-label="Main">
+        <a href="#how">How it works</a>
+        <a href="#models">Models</a>
+        <a href="#safety">Safety</a>
+        <a href="#faq">FAQ</a>
+        <a class="button button--small" href="#download">Download</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <p class="eyebrow">A pixel office for AI agents</p>
+        <h1 id="hero-title">Watch your AI team build it.</h1>
+        <p class="lede">
+          Give 8Bit Agents a goal. The Architect sketches a plan on the whiteboard, the Boss hands out
+          tasks, and Workers build at their desks. You watch every step and answer their questions.
+          Bring your own model: Claude, OpenAI, or one running on your own computer.
+        </p>
+        <div class="actions">
+          <a class="button" id="hero-download" href="#download">Download</a>
+          <a class="button button--ghost" href="#how">How it works</a>
+        </div>
+        <p class="fineprint">Windows · macOS · Linux · No account needed</p>
+      </section>
+
+      <section class="demo" id="demo" data-state="idle" aria-labelledby="demo-title">
+        <h2 id="demo-title" class="visually-hidden">Live demo</h2>
+        <div class="demo__screen">
+          <iframe id="demo-frame" title="Live demo: the 8Bit Agents office with pretend agents at work" loading="eager"></iframe>
+          <div class="demo__poster">
+            <button class="button" id="demo-start" type="button">▶ Play the demo</button>
+            <p>Runs in your browser. No sign-up.</p>
+          </div>
+        </div>
+        <p class="demo__caption">
+          This office runs right here with pretend agents. <strong>Click anyone</strong> to see what
+          they're doing, answer questions in the <strong>inbox</strong>, and press <kbd>F</kbd> to
+          follow someone. The app runs the real thing with your models.
+        </p>
+      </section>
+
+      <section class="section" id="how" aria-labelledby="how-title">
+        <h2 id="how-title">How it works</h2>
+        <ol class="steps">
+          <li class="card">
+            <svg class="sprite sprite--big" style="--hair: #c28569; --skin: #e8b796; --shirt: #e43b44" aria-hidden="true"><use href="#agent" /></svg>
+            <h3>1. You set the goal</h3>
+            <p>Type what you want built, then set a budget so a run never spends more than you planned.</p>
+          </li>
+          <li class="card">
+            <svg class="sprite sprite--big" style="--hair: #262b44; --skin: #c28569; --shirt: #0099db" aria-hidden="true"><use href="#agent" /></svg>
+            <h3>2. The Architect plans</h3>
+            <p>The Architect reads what's there and draws up the design on the whiteboard: the parts, the order and the risks.</p>
+          </li>
+          <li class="card">
+            <svg class="sprite sprite--big" style="--hair: #3e2731; --skin: #e8b796; --shirt: #feae34" aria-hidden="true"><use href="#agent" /></svg>
+            <h3>3. The Boss assigns</h3>
+            <p>The Boss turns the plan into tasks and sends Workers to their desks, several at once.</p>
+          </li>
+          <li class="card">
+            <svg class="sprite sprite--big" style="--hair: #733e39; --skin: #e8b796; --shirt: #63c74d" aria-hidden="true"><use href="#agent" /></svg>
+            <h3>4. Workers build</h3>
+            <p>Workers read, write and test code in a folder you choose. Anything that runs a command waits in your inbox for your OK.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section" id="models" aria-labelledby="models-title">
+        <h2 id="models-title">Use the model you like</h2>
+        <p class="section__lede">
+          Pick a model for each role: a strong one for the Boss and Architect, a quick, cheap one for
+          the Workers. Local models run on your own hardware at no cost per run.
+        </p>
+        <ul class="pills" aria-label="Supported model providers">
+          <li>Claude</li>
+          <li>OpenAI</li>
+          <li>OpenRouter</li>
+          <li>Groq</li>
+          <li>Ollama <span>local</span></li>
+          <li>LM Studio <span>local</span></li>
+          <li>Any OpenAI-compatible server</li>
+        </ul>
+      </section>
+
+      <section class="section" id="safety" aria-labelledby="safety-title">
+        <h2 id="safety-title">Your computer, your keys, your call</h2>
+        <ul class="features">
+          <li class="card">
+            <h3>Keys stay on your computer</h3>
+            <p>API keys are encrypted by your operating system's keychain and only ever sent to the provider you chose.</p>
+          </li>
+          <li class="card">
+            <h3>No account</h3>
+            <p>Download it and go. No sign-up, no login, no analytics.</p>
+          </li>
+          <li class="card">
+            <h3>One folder, nothing else</h3>
+            <p>Agents can only read and write inside the workspace folder you pick.</p>
+          </li>
+          <li class="card">
+            <h3>You approve commands</h3>
+            <p>Every shell command shows up in your inbox first. Approve it, or say no.</p>
+          </li>
+          <li class="card">
+            <h3>Spending limits</h3>
+            <p>Each run stops at the dollar and token limits you set, and the cost so far is always on screen.</p>
+          </li>
+          <li class="card">
+            <h3>Make it yours</h3>
+            <p>Name your team, pick their shirt colors, and switch between night, day and high-contrast themes.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Questions</h2>
+        <div class="faq">
+          <details>
+            <summary>Can I use my Claude Pro or ChatGPT Plus subscription?</summary>
+            <p>
+              No. Those subscriptions cover the chat apps only. 8Bit Agents needs an API key from a model
+              provider, where you pay for what you use, or a free local model through Ollama or LM Studio.
+            </p>
+          </details>
+          <details>
+            <summary>What does a run cost?</summary>
+            <p>
+              You pay your model provider directly for what the agents use. The cost of the current run
+              shows in the top bar, and the run stops when it reaches the limit you set. Local models
+              cost nothing per run.
+            </p>
+          </details>
+          <details>
+            <summary>Can the agents mess up my computer?</summary>
+            <p>
+              They work inside one workspace folder and can't read or write files outside it. Shell
+              commands wait for your approval, so read each one before you say yes.
+            </p>
+          </details>
+          <details>
+            <summary>Is my code sent anywhere?</summary>
+            <p>
+              Only to the model provider you set up, as part of the agents' prompts. With a local model,
+              nothing leaves your computer. See the <a href="privacy.html">privacy page</a> for details.
+            </p>
+          </details>
+          <details>
+            <summary>Why does my computer warn me when I install it?</summary>
+            <p>
+              Early builds aren't code-signed yet. On Windows, choose <em>More info › Run anyway</em>.
+              On macOS, open the app once, then go to <em>System Settings › Privacy &amp; Security</em>
+              and choose <em>Open Anyway</em>. Signed builds are on the way.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section class="section" id="download" aria-labelledby="download-title">
+        <h2 id="download-title">Download</h2>
+        <p class="section__lede">Early beta. Bring an API key or a local model, and you're ready.</p>
+        <ul class="downloads">
+          <li class="card download">
+            <h3>Windows</h3>
+            <a class="button" data-download="windows" href="https://github.com/ghostbytestudios/8-bit-harness/releases">Download</a>
+            <p class="download__note" data-download-note="windows">Installer (.exe)</p>
+          </li>
+          <li class="card download">
+            <h3>macOS</h3>
+            <a class="button" data-download="mac" href="https://github.com/ghostbytestudios/8-bit-harness/releases">Download</a>
+            <p class="download__note" data-download-note="mac">Disk image (.dmg)</p>
+          </li>
+          <li class="card download">
+            <h3>Linux</h3>
+            <a class="button" data-download="linux" href="https://github.com/ghostbytestudios/8-bit-harness/releases">Download</a>
+            <p class="download__note" data-download-note="linux">AppImage</p>
+          </li>
+        </ul>
+        <p class="release-status" id="release-status" role="status"></p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Ghostbyte Studios</p>
+      <nav aria-label="Footer">
+        <a href="privacy.html">Privacy</a>
+        <a href="https://github.com/ghostbytestudios/8-bit-harness">GitHub</a>
+      </nav>
+      <p class="credits">Furniture models by <a href="https://kenney.nl">Kenney</a> (CC0).</p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

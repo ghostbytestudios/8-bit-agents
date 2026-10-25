@@ -11,7 +11,8 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-const MODEL_ROOT = '/assets/kenney-furniture';
+/** Relative to wherever the client is served from (dev server, desktop app, the website's /demo/). */
+const MODEL_ROOT = `${import.meta.env.BASE_URL}assets/kenney-furniture`;
 const MISSING_MODEL_COLOR = '#ff0044';
 
 const loader = new GLTFLoader();

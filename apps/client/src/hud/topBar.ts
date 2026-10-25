@@ -20,6 +20,8 @@ export interface TopBarMode {
   isSimulated: boolean;
   /** The mock is running because no server answered. */
   isServerOffline: boolean;
+  /** Embedded on the landing page. */
+  isDemo?: boolean;
 }
 
 /**
@@ -40,7 +42,8 @@ export class TopBar {
 
   constructor(root: HTMLElement, handlers: TopBarHandlers, private readonly mode: TopBarMode) {
     const name = APP_NAME.toUpperCase();
-    const title = mode.isSimulated ? `${name} · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}` : name;
+    const mockTitle = mode.isDemo ? `${name} · DEMO` : `${name} · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}`;
+    const title = mode.isSimulated ? mockTitle : name;
     this.alert = button('topbar__alert', '', handlers.onOpenInbox);
     this.stop = button('pixel-button pixel-button--danger', 'STOP', handlers.onStop);
     const settings = button('pixel-button topbar__settings', '⚙ SETTINGS', handlers.onOpenSettings);

@@ -19,7 +19,8 @@ electronFuses:
   grantFileProtocolExtraPrivileges: false
 win:
   target: nsis
-  artifactName: 8Bit-Agents-Setup-${version}.${ext}
+  # Fixed names, so the website can link to releases/latest/download/<name>.
+  artifactName: 8Bit-Agents-Setup.${ext}
 nsis:
   oneClick: false
   perMachine: false
@@ -28,13 +29,18 @@ mac:
   target:
     - target: dmg
       arch: universal
+    # Auto-update on macOS installs from the zip, not the dmg.
+    - target: zip
+      arch: universal
   category: public.app-category.developer-tools
   hardenedRuntime: true
-  artifactName: 8Bit-Agents-${version}-mac.${ext}
+  artifactName: 8Bit-Agents-mac.${ext}
 linux:
-  target: AppImage
+  target:
+    - target: AppImage
+      arch: x64
   category: Development
-  artifactName: 8Bit-Agents-${version}-linux-${arch}.${ext}
+  artifactName: 8Bit-Agents-linux.${ext}
 publish:
   provider: github
   owner: ghostbytestudios

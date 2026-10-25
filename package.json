@@ -13,7 +13,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "desktop": "npm run build && npm run build -w @harness/desktop && npm run start -w @harness/desktop",
-    "desktop:dist": "npm run build && npm run build -w @harness/desktop && npm run dist -w @harness/desktop"
+    "desktop:dist": "npm run build && npm run build -w @harness/desktop && npm run dist -w @harness/desktop",
+    "site": "npm run build -w @harness/site && npm run preview -w @harness/site"
   },
   "devDependencies": {
     "vitest": "^5.0.5"
