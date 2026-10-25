@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js): website visits only. The app and the demo office send nothing. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K7LF2M6VW3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-K7LF2M6VW3');
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Privacy · 8Bit Agents</title>
@@ -19,7 +28,8 @@
 
     <main id="main" class="prose">
       <h1>Privacy</h1>
-      <p>Last updated 25 October 2026. In short: we don't collect anything about you.</p>
+      <p>Last updated 25 October 2026. In short: the app collects nothing about you. This website counts visits with
+        Google Analytics.</p>
 
       <h2>The app</h2>
       <ul>
@@ -42,7 +52,14 @@
 
       <h2>This website</h2>
       <ul>
-        <li>No cookies, no analytics, no trackers, no ads.</li>
+        <li>
+          <strong>Visitor statistics:</strong> this website uses Google Analytics to count visits and see which pages
+          people read and where they came from. Google sets cookies to tell repeat visits apart and receives your IP
+          address, browser and rough location. We only look at the totals and never try to identify anyone. See
+          <a href="https://policies.google.com/technologies/partner-sites">how Google uses this data</a>, or opt out
+          with Google's <a href="https://tools.google.com/dlpage/gaoptout">opt-out add-on</a> or an ad blocker.
+        </li>
+        <li>No ads, and nothing is sold.</li>
         <li>Fonts and images are served from this site, not from third parties.</li>
         <li>
           The download section asks GitHub's public API for the latest release, so the buttons point at the right files.
@@ -51,7 +68,10 @@
           The site is hosted on GitHub Pages. GitHub may keep standard server logs, such as IP addresses; see
           GitHub's privacy statement.
         </li>
-        <li>The demo office runs entirely in your browser. Nothing you click or answer in it is sent anywhere.</li>
+        <li>
+          The demo office runs entirely in your browser. Nothing you click or answer in it is sent anywhere, though
+          Google Analytics still counts the visit to the page.
+        </li>
       </ul>
 
       <h2>Questions</h2>
