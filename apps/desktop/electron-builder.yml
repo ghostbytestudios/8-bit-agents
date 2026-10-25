@@ -33,7 +33,10 @@ mac:
     - target: zip
       arch: universal
   category: public.app-category.developer-tools
-  hardenedRuntime: true
+  # Ad-hoc signed until there is an Apple Developer ID: Apple Silicon refuses to run unsigned apps.
+  # With a Developer ID, set identity to it, turn hardenedRuntime back on and add notarization.
+  identity: "-"
+  hardenedRuntime: false
   artifactName: 8Bit-Agents-mac.${ext}
 linux:
   target:

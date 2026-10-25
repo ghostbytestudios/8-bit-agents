@@ -17,11 +17,13 @@ import {
   type RunningHarness,
   type SecretStore,
 } from '@harness/server/app';
-import { app, BrowserWindow, dialog, protocol, safeStorage, screen, session, shell, type WebContents } from 'electron';
+import { app, BrowserWindow, crashReporter, dialog, protocol, safeStorage, screen, session, shell, type WebContents } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { APP_ORIGIN, APP_SCHEME, contentSecurityPolicy, contentTypeOf, isSafeExternalUrl, resolveAppFile } from './appFiles';
-import { installMenu } from './menu';
+import { ErrorLog, teeLogger } from './errorLog';
+import { installMenu, PROJECT_URL } from './menu';
 import { EncryptedSecretStore } from './secretStore';
+import { CHANGELOG, formatNotes, notesFor, takeUnseenNotes, type ReleaseNotes } from './whatsNew';
 import { initialBounds, loadWindowState, MIN_WINDOW, saveWindowState } from './windowState';
 
 /** The built client and the preload script sit next to this file in the bundle. */
@@ -32,13 +34,19 @@ const BACKGROUND = '#181425';
 /** For automated checks: open, wait, save a screenshot here, print the top bar, quit. */
 const SMOKE_SCREENSHOT = process.env.HARNESS_SMOKE_SCREENSHOT;
 const SMOKE_SETTLE_MS = 6_000;
-const log = console;
 
 // The same folder the dev server uses (HARNESS_DATA_DIR overrides it); must be set before `ready`.
 const DATA_DIR = path.resolve(appDataDir());
 if (!process.env.HARNESS_DATA_DIR) adoptLegacyDataDir(DATA_DIR, legacyAppDataDir());
 app.setPath('userData', DATA_DIR);
 app.setName(APP_NAME);
+
+/** Startup, warnings, errors and crashes; Help › Open Error Log. Stays on this computer. */
+const LOG_FILE = path.join(DATA_DIR, 'logs', 'main.log');
+const log = teeLogger(console, new ErrorLog(LOG_FILE));
+// Native crash dumps are kept locally too; nothing is ever uploaded.
+app.setPath('crashDumps', path.join(DATA_DIR, 'crashes'));
+crashReporter.start({ uploadToServer: false });
 
 // A standard, secure scheme gives the page a real origin (app://harness) for the server's origin check.
 protocol.registerSchemesAsPrivileged([{ scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
@@ -124,12 +132,12 @@ async function createWindow(serverPort: number, dataDir: string): Promise<Browse
     },
   });
   if (saved?.isMaximized) window.maximize();
-  if (!app.isPackaged || SMOKE_SCREENSHOT) {
-    // Page warnings and errors show up in the terminal while developing.
-    window.webContents.on('console-message', ({ level, message }) => {
-      if (level === 'warning' || level === 'error') log.warn(`[page] ${message}`);
-    });
-  }
+  // Page errors go to the error log; warnings only while developing.
+  const logsPageWarnings = !app.isPackaged || Boolean(SMOKE_SCREENSHOT);
+  window.webContents.on('console-message', ({ level, message }) => {
+    if (level === 'error') log.error(`[page] ${message}`);
+    else if (level === 'warning' && logsPageWarnings) log.warn(`[page] ${message}`);
+  });
   window.once('ready-to-show', () => window.show());
   window.on('close', () => {
     const state = { ...window.getNormalBounds(), isMaximized: window.isMaximized() };
@@ -145,6 +153,35 @@ async function createWindow(serverPort: number, dataDir: string): Promise<Browse
 function checkForUpdates(): void {
   if (!app.isPackaged || process.env.HARNESS_NO_UPDATES) return;
   autoUpdater.checkForUpdatesAndNotify().catch((error: unknown) => log.warn(`[desktop] Update check failed: ${errorMessage(error)}`));
+}
+
+function showNotes(title: string, releases: readonly ReleaseNotes[]): void {
+  const options = { type: 'info' as const, title, message: title, detail: formatNotes(releases), buttons: ['OK'] };
+  const shown = mainWindow ? dialog.showMessageBox(mainWindow, options) : dialog.showMessageBox(options);
+  shown.catch((error: unknown) => log.warn(`[desktop] ${errorMessage(error)}`));
+}
+
+function showWhatsNew(): void {
+  const notes = notesFor(CHANGELOG, app.getVersion());
+  showNotes(`What's new in ${APP_NAME}`, notes ? [notes] : []);
+}
+
+function showAbout(): void {
+  const options = {
+    type: 'info' as const,
+    title: `About ${APP_NAME}`,
+    message: `${APP_NAME} ${app.getVersion()}`,
+    detail: [`Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`, '© 2026 Ghostbyte Studios', PROJECT_URL].join('\n'),
+    buttons: ['OK'],
+  };
+  const shown = mainWindow ? dialog.showMessageBox(mainWindow, options) : dialog.showMessageBox(options);
+  shown.catch((error: unknown) => log.warn(`[desktop] ${errorMessage(error)}`));
+}
+
+/** After an update, once: what changed since the version that ran last. */
+async function showUnseenNotes(dataDir: string): Promise<void> {
+  const unseen = await takeUnseenNotes(dataDir, app.getVersion());
+  if (unseen.length > 0) showNotes(`${APP_NAME} was updated`, unseen);
 }
 
 async function smokeTest(window: BrowserWindow, screenshotPath: string): Promise<void> {
@@ -171,12 +208,16 @@ async function start(): Promise<void> {
   });
   lockDownSession(harness.port, sessionToken);
   const { settings } = harness;
-  installMenu({ workspace: () => settings.settings.workspace, dataDir, checkForUpdates, log });
+  installMenu({ workspace: () => settings.settings.workspace, dataDir, logFile: LOG_FILE, checkForUpdates, showWhatsNew, showAbout, log });
   mainWindow = await createWindow(harness.port, dataDir);
   log.info(`[desktop] ${APP_NAME} ${app.getVersion()} ready; settings in ${dataDir}`);
 
-  if (SMOKE_SCREENSHOT) await smokeTest(mainWindow, path.resolve(SMOKE_SCREENSHOT));
-  else checkForUpdates();
+  if (SMOKE_SCREENSHOT) {
+    await smokeTest(mainWindow, path.resolve(SMOKE_SCREENSHOT));
+    return;
+  }
+  checkForUpdates();
+  showUnseenNotes(dataDir).catch((error: unknown) => log.warn(`[desktop] Couldn't read the last version: ${errorMessage(error)}`));
 }
 
 function fail(error: unknown): void {
@@ -195,6 +236,11 @@ if (!app.requestSingleInstanceLock()) {
     mainWindow.focus();
   });
   app.on('web-contents-created', (_event, contents) => hardenContents(contents));
+  // Crashes land in the error log, so there's something to attach to a bug report.
+  process.on('uncaughtException', (error) => log.error('[desktop] Uncaught error:', error));
+  process.on('unhandledRejection', (reason) => log.error('[desktop] Unhandled rejection:', reason));
+  app.on('render-process-gone', (_event, _contents, details) => log.error(`[desktop] The window crashed: ${details.reason} (exit code ${details.exitCode})`));
+  app.on('child-process-gone', (_event, details) => log.error(`[desktop] ${details.type} process gone: ${details.reason} (exit code ${details.exitCode})`));
   // On macOS apps stay open without windows; the dock icon brings one back.
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

@@ -13,6 +13,8 @@ export interface TopBarHandlers {
   onOpenSettings(): void;
   onStart(goal: string): void;
   onStop(): void;
+  /** Leaves the demo office the welcome screen opened (?mock) for the real one. */
+  onLeaveMock(): void;
 }
 
 export interface TopBarMode {
@@ -42,15 +44,18 @@ export class TopBar {
 
   constructor(root: HTMLElement, handlers: TopBarHandlers, private readonly mode: TopBarMode) {
     const name = APP_NAME.toUpperCase();
-    const mockTitle = mode.isDemo ? `${name} · DEMO` : `${name} · MOCK RUN${mode.isServerOffline ? ' (NO SERVER)' : ''}`;
+    // Picked on purpose (landing page or the welcome screen) it's the demo; otherwise the server is missing.
+    const mockTitle = mode.isServerOffline ? `${name} · MOCK RUN (NO SERVER)` : `${name} · DEMO`;
     const title = mode.isSimulated ? mockTitle : name;
     this.alert = button('topbar__alert', '', handlers.onOpenInbox);
     this.stop = button('pixel-button pixel-button--danger', 'STOP', handlers.onStop);
     const settings = button('pixel-button topbar__settings', '⚙ SETTINGS', handlers.onOpenSettings);
     // The demo office has no server to save settings to.
     settings.hidden = mode.isSimulated;
+    const leaveMock = button('pixel-button topbar__leave', '◀ MY OFFICE', handlers.onLeaveMock);
+    leaveMock.hidden = !mode.isSimulated || mode.isServerOffline || Boolean(mode.isDemo);
     const line = el('div', 'topbar__line');
-    line.append(el('span', 'topbar__title', title), this.connection, this.status, this.alert, settings);
+    line.append(el('span', 'topbar__title', title), this.connection, this.status, this.alert, settings, leaveMock);
 
     this.input.type = 'text';
     this.input.maxLength = MAX_GOAL_CHARS;
@@ -92,6 +97,12 @@ export class TopBar {
     this.notice.hidden = false;
     if (this.noticeTimer) clearTimeout(this.noticeTimer);
     this.noticeTimer = setTimeout(() => (this.notice.hidden = true), NOTICE_MS);
+  }
+
+  /** Puts a goal in the box, ready to START. */
+  setGoal(goal: string): void {
+    this.input.value = goal;
+    this.input.focus();
   }
 
   /** Clears the goal box after the server accepted a new run. */

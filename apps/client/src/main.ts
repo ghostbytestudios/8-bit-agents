@@ -10,7 +10,9 @@ import { Dock } from './hud/dock';
 import { NameTags } from './hud/nameTags';
 import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
 import { SettingsPanel } from './hud/settingsPanel';
+import { needsSetup, SAMPLE_GOAL } from './hud/setup';
 import { TopBar } from './hud/topBar';
+import { WelcomePanel } from './hud/welcome';
 import { SocketFeed, probe } from './net/socketFeed';
 import { serverUrl } from './net/desktop';
 import { MockRun } from './sim/mockRun';
@@ -289,6 +291,13 @@ async function start(): Promise<void> {
   if (IS_DEMO && window.innerWidth < NARROW_DEMO_PX) dock.closeTabs();
   nameTags.onSelect = select;
   const settingsPanel = new SettingsPanel(document.body, { send: (command) => sendCommand(feed, command) });
+  const welcome = new WelcomePanel(document.body, {
+    onSetUpModels: () => settingsPanel.open('models'),
+    onChangeWorkspace: () => settingsPanel.open('limits'),
+    onUseSampleGoal: () => topBar.setGoal(SAMPLE_GOAL),
+    onTryDemo: () => location.assign(`${location.pathname}?mock`),
+  });
+  let hasCheckedSetup = false;
   const topBar = new TopBar(topBarRoot, {
     onOpenInbox: () => dock.openTab('inbox', true),
     onOpenSettings: () => settingsPanel.open(),
@@ -299,6 +308,7 @@ async function start(): Promise<void> {
       const { runId } = world.state;
       if (runId) sendCommand(feed, { type: 'run.stop', runId });
     },
+    onLeaveMock: () => location.assign(location.pathname),
   }, { isSimulated: feed.isSimulated, isServerOffline, isDemo: IS_DEMO });
   if (socket) {
     topBar.setConnection(socket.connection);
@@ -315,6 +325,11 @@ async function start(): Promise<void> {
     socket.onProviderTested((result) => settingsPanel.showTest(result));
     socket.onSettings((snapshot) => {
       settingsPanel.setSettings(snapshot);
+      // First settings from the server: a new install has no model connected yet.
+      if (!hasCheckedSetup) {
+        hasCheckedSetup = true;
+        if (needsSetup(snapshot.settings, snapshot.keys)) welcome.showIfNew(snapshot.settings.workspace);
+      }
       applyAppearance(snapshot.settings.appearance);
       choreographer.setTeamColors(snapshot.settings.team);
     });
@@ -351,6 +366,7 @@ async function start(): Promise<void> {
   const panInput = setupInput({
     onClick: (point) => select(pickAt(point)),
     onKey: (key) => {
+      if (welcome.isOpen) return true;
       // While Settings is open, Escape closes it and office shortcuts are paused.
       if (settingsPanel.isOpen) {
         if (key === 'escape') settingsPanel.close();

@@ -170,8 +170,36 @@ select.pixel-input {
   cursor: pointer;
 }
 
-.topbar__settings[hidden] {
+.topbar__settings[hidden],
+.topbar__leave[hidden] {
   display: none;
+}
+
+/* ── Welcome (first run) ─────────────────────────────────────────────────── */
+
+.welcome {
+  width: min(560px, 100%);
+}
+
+.welcome__step-title {
+  margin: 4px 0 8px;
+  font-size: 9px;
+  color: var(--accent);
+}
+
+.welcome__text {
+  margin: 8px 0;
+  font-size: 8px;
+  line-height: 1.8;
+}
+
+.welcome__path {
+  display: block;
+  margin: 0 0 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  color: var(--off);
 }
 
 html,

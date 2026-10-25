@@ -17,7 +17,8 @@ import { button, el } from './dom';
  * server once and only "key set ••••1234" ever comes back.
  */
 
-type Tab = 'models' | 'team' | 'look' | 'limits';
+export type SettingsTab = 'models' | 'team' | 'look' | 'limits';
+type Tab = SettingsTab;
 type RoleKey = keyof AppSettings['roles'];
 
 const TABS: ReadonlyArray<[Tab, string]> = [['models', 'MODELS'], ['team', 'TEAM'], ['look', 'LOOK'], ['limits', 'LIMITS']];
@@ -145,8 +146,10 @@ export class SettingsPanel {
     return !this.backdrop.hidden;
   }
 
-  open(): void {
+  /** Opens on `tab`, or wherever it was last. */
+  open(tab?: Tab): void {
     if (!this.saved) return;
+    if (tab) this.tab = tab;
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.draft = structuredClone(this.saved);
     this.setNotice('');
