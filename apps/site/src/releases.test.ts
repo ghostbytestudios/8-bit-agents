@@ -7,7 +7,7 @@ const LINUX = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like G
 const ANDROID = 'Mozilla/5.0 (Linux; Android 16; Pixel 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Mobile Safari/537.36';
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
 
-const DOWNLOAD = 'https://github.com/ghostbytestudios/8-bit-harness/releases/download/v0.1.0';
+const DOWNLOAD = 'https://github.com/ghostbytestudios/8-bit-agents/releases/download/v0.1.0';
 
 describe('detectPlatform', () => {
   it('recognises the three desktop systems', () => {
@@ -28,7 +28,7 @@ describe('downloadsFrom', () => {
   it('maps the installers in a release to their systems', () => {
     const release = {
       tag_name: 'v0.1.0',
-      html_url: 'https://github.com/ghostbytestudios/8-bit-harness/releases/tag/v0.1.0',
+      html_url: 'https://github.com/ghostbytestudios/8-bit-agents/releases/tag/v0.1.0',
       assets: [
         { name: '8Bit-Agents-Setup.exe', browser_download_url: `${DOWNLOAD}/8Bit-Agents-Setup.exe` },
         { name: '8Bit-Agents-mac.dmg', browser_download_url: `${DOWNLOAD}/8Bit-Agents-mac.dmg` },
@@ -50,7 +50,7 @@ describe('downloadsFrom', () => {
     };
     expect(downloadsFrom(release)).toEqual({
       version: 'v0.1.0',
-      pageUrl: 'https://github.com/ghostbytestudios/8-bit-harness/releases',
+      pageUrl: 'https://github.com/ghostbytestudios/8-bit-agents/releases',
       links: {},
     });
   });

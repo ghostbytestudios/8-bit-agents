@@ -44,5 +44,5 @@ linux:
 publish:
   provider: github
   owner: ghostbytestudios
-  repo: 8-bit-harness
+  repo: 8-bit-agents
   releaseType: draft

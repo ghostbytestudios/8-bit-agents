@@ -3,7 +3,7 @@ export type Platform = 'windows' | 'mac' | 'linux';
 export const PLATFORMS: readonly Platform[] = ['windows', 'mac', 'linux'];
 export const PLATFORM_LABEL: Record<Platform, string> = { windows: 'Windows', mac: 'macOS', linux: 'Linux' };
 
-const REPO = 'ghostbytestudios/8-bit-harness';
+const REPO = 'ghostbytestudios/8-bit-agents';
 export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `${REPO_URL}/releases`;
 export const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`;

@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { APP_NAME } from '@harness/protocol';
 import { app, Menu, shell, type MenuItemConstructorOptions } from 'electron';
 
-const PROJECT_URL = 'https://github.com/ghostbytestudios/8-bit-harness';
+const PROJECT_URL = 'https://github.com/ghostbytestudios/8-bit-agents';
 
 export interface MenuActions {
   /** The agents' workspace folder, from Settings. */

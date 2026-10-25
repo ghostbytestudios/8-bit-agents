@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "description": "An 8-bit office where AI agents work on your goals.",
   "author": "Ghostbyte Studios <ghxstbytestudios@gmail.com>",
-  "homepage": "https://github.com/ghostbytestudios/8-bit-harness",
+  "homepage": "https://github.com/ghostbytestudios/8-bit-agents",
   "main": "dist/main.cjs",
   "scripts": {
     "build": "node build.mjs",

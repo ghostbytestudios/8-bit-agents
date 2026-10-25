@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 const page = (name: string) => fileURLToPath(new URL(name, import.meta.url));
 
 export default defineConfig({
-  // Relative URLs, so the site works at any path (GitHub Pages serves it under /8-bit-harness/).
+  // Relative URLs, so the site works at any path (GitHub Pages serves it under /8-bit-agents/).
   base: './',
   build: {
     rollupOptions: {
