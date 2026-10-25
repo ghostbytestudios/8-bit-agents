@@ -1,10 +1,12 @@
-import type { AppSettings } from '@harness/protocol';
-import { RunHub } from './hub';
+import { MAX_FILE_ENTRIES, type AppSettings } from '@harness/protocol';
+import { RunHub, type WorkspaceFiles } from './hub';
 import { LiveRun } from './liveRun';
 import { startServer } from './server';
 import { FileSecretStore, type SecretStore } from './settings/secrets';
 import { SettingsService } from './settings/service';
 import { SettingsStore } from './settings/store';
+import { SkillStore } from './skills';
+import { Workspace } from './workspace';
 
 export { adoptLegacyDataDir, appDataDir, defaultWorkspace, isWithin, legacyAppDataDir, parseJson, writeFileAtomic } from './settings/files';
 export { FileSecretStore, keyStatus, SecretsFileSchema, serializeSecrets, type SecretStore } from './settings/secrets';
@@ -51,7 +53,21 @@ export async function startHarness(options: HarnessOptions): Promise<RunningHarn
     dataDir,
     protectedFolders: options.protectedFolders,
   });
-  const hub = new RunHub((emit) => new LiveRun({ settings, credentialNames: CREDENTIAL_ENV_NAMES, emit }), settings, log);
+  const skills = await SkillStore.open(dataDir, log);
+  // Opened per request, so the cabinet always shows the workspace currently set in Settings.
+  const openWorkspace = () => Workspace.open(settings.settings.workspace, CREDENTIAL_ENV_NAMES);
+  const files: WorkspaceFiles = {
+    list: async () => {
+      const workspace = await openWorkspace();
+      return { root: workspace.root, ...(await workspace.listTree('.', MAX_FILE_ENTRIES)) };
+    },
+    read: async (relative) => (await openWorkspace()).readFile(relative),
+  };
+  const hub = new RunHub(
+    (emit) => new LiveRun({ settings, skills, credentialNames: CREDENTIAL_ENV_NAMES, emit }),
+    { settings, files, skills },
+    log,
+  );
   const server = await startServer({
     hub,
     host: HARNESS_HOST,

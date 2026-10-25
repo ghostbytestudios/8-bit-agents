@@ -192,6 +192,8 @@ const BOSS_OFFICE: Placement[] = [
   { model: 'coatRackStanding', at: [7.5, 5.4], blocks: [[7, 5]] },
 ];
 
+const SKILL_SHELF_ZS = [2.4, 2.8, 3.2];
+
 const WAR_ROOM: Placement[] = [
   { model: 'table', at: [10.58, 3.6], blocks: [[10, 3]] },
   { model: 'table', at: [11.42, 3.6], blocks: [[11, 3]] },
@@ -204,6 +206,8 @@ const WAR_ROOM: Placement[] = [
   { model: 'televisionModern', at: [13.6, 0.18], y: TV_STAND_HEIGHT },
   { model: 'pottedPlant', at: [8.5, 0.5], blocks: [[8, 0]] },
   { model: 'pottedPlant', at: [14.5, 0.5], blocks: [[14, 0]] },
+  // The skill shelf on the east wall (click it to edit skills; agents read them here).
+  ...SKILL_SHELF_ZS.map((z): Placement => ({ model: 'bookcaseOpen', at: [14.78, z], rotation: -Math.PI / 2, blocks: [[14, Math.floor(z)]] })),
 ];
 
 const SERVER_ROOM: Placement[] = [
@@ -314,6 +318,25 @@ export const PROPS: readonly PropPlacement[] = [
   { prop: 'inboxTray', at: [11.7, 13.5], y: DESK_HEIGHT },
 ];
 
+// ── Things you can click ──────────────────────────────────────────────────────
+
+export type HotspotId = 'files' | 'skills';
+
+export interface HotspotDef {
+  id: HotspotId;
+  /** Shown when the pointer is over it. */
+  label: string;
+  at: Pair;
+  /** Top of the object; clicks anywhere between the floor and here count. */
+  height: number;
+}
+
+/** Both in the War Room: the Architect's cabinet holds the workspace files, the shelf holds skills. */
+export const HOTSPOTS: readonly HotspotDef[] = [
+  { id: 'files', label: 'FILES', at: [8.3, 2.5], height: 0.75 },
+  { id: 'skills', label: 'SKILLS', at: [14.78, 2.8], height: 0.85 },
+];
+
 // ── Named spots ───────────────────────────────────────────────────────────────
 
 export const SPOTS: readonly SpotDef[] = [
@@ -338,6 +361,8 @@ export const SPOTS: readonly SpotDef[] = [
   // `<place>@<home spot id>` = private to whoever lives at that home (see Choreographer).
   spot('cabinets@boss', 'activity', [4, 1], FACE_NORTH, 'operate', { anchor: [4.45, 0.95] }),
   spot('cabinets@whiteboard', 'activity', [9, 2], FACE_WEST, 'operate', { anchor: [8.95, 2.5] }),
+  spot('skills:a', 'activity', [13, 2], FACE_EAST, 'operate', { anchor: [13.95, 2.6] }),
+  spot('skills:b', 'activity', [13, 3], FACE_EAST, 'operate', { anchor: [13.95, 3.3] }),
   spot('printer', 'activity', [1, 13], FACE_SOUTH, 'operate', { anchor: [1.5, 13.95] }),
   spot('coffee', 'activity', [16, 11], FACE_NORTH, 'operate', { anchor: [16.29, 10.95] }),
   spot('meeting:a', 'activity', [10, 2], FACE_SOUTH, 'sit', { anchor: [10.58, 2.95], seatHeight: SEAT_HEIGHT }),

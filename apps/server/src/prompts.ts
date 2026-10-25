@@ -27,6 +27,12 @@ Read the relevant files before changing them. Write complete files with write_fi
 run_command needs the human's approval each time, so use it only to verify your work (e.g. run tests).
 If the plan is unclear, use ask_architect. If you cannot finish, call complete_task with success=false and explain why.`;
 
+/** Names and descriptions only; the agent reads a skill's full text when it needs it. */
+export function skillsSection(skills: ReadonlyArray<{ name: string; description: string }>): string {
+  const list = skills.map((skill) => `- ${skill.name}: ${skill.description}`).join('\n');
+  return `Skills: the human's notes on how to work. When one fits what you are about to do, read it with read_skill first and follow it.\n${list}`;
+}
+
 export function architectBrief(goal: string): string {
   return `The human's goal:\n${goal}\n\nLook at the workspace (it may be empty), then publish your plan with write_plan.`;
 }

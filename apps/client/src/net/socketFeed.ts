@@ -32,6 +32,16 @@ export interface SettingsSnapshot {
 
 export type ProviderTestResult = Extract<ServerMessage, { type: 'provider.tested' }>;
 
+/** Replies for the War Room's file cabinet and skill shelf. */
+export type LibraryReply = Extract<ServerMessage, { type: 'files' | 'file' | 'skills' }>;
+
+/** Where the cabinet and shelf get their data: the live server or the mock. */
+export interface LibrarySource {
+  onLibrary(listener: (reply: LibraryReply) => void): () => void;
+  /** Refusals (e.g. a duplicate skill name) arrive as failed acks. */
+  onAck(listener: (ack: Ack) => void): () => void;
+}
+
 /** Just the part of the browser WebSocket this feed uses (a seam for tests). */
 export interface SocketLike {
   readonly readyState: number;
@@ -46,7 +56,7 @@ export type SocketFactory = (url: string) => SocketLike;
 const OPEN = 1;
 const defaultFactory: SocketFactory = (url) => new WebSocket(url) as unknown as SocketLike;
 
-export class SocketFeed implements EventFeed {
+export class SocketFeed implements EventFeed, LibrarySource {
   readonly isSimulated = false;
   private socket: SocketLike | null = null;
   private retryMs = MIN_RETRY_MS;
@@ -56,6 +66,7 @@ export class SocketFeed implements EventFeed {
   private readonly ackListeners = new Set<(ack: Ack) => void>();
   private readonly settingsListeners = new Set<(snapshot: SettingsSnapshot) => void>();
   private readonly testListeners = new Set<(result: ProviderTestResult) => void>();
+  private readonly libraryListeners = new Set<(reply: LibraryReply) => void>();
   private latestSettings: SettingsSnapshot | null = null;
   private status: ConnectionStatus = 'connecting';
 
@@ -111,6 +122,11 @@ export class SocketFeed implements EventFeed {
     return () => this.testListeners.delete(listener);
   }
 
+  onLibrary(listener: (reply: LibraryReply) => void): () => void {
+    this.libraryListeners.add(listener);
+    return () => this.libraryListeners.delete(listener);
+  }
+
   /** Sends a command; false (and nothing sent) while disconnected. */
   send(command: HarnessCommand): boolean {
     if (this.socket?.readyState !== OPEN) return false;
@@ -153,6 +169,11 @@ export class SocketFeed implements EventFeed {
         return;
       case 'provider.tested':
         for (const listener of this.testListeners) listener(message);
+        return;
+      case 'files':
+      case 'file':
+      case 'skills':
+        for (const listener of this.libraryListeners) listener(message);
         return;
     }
   }

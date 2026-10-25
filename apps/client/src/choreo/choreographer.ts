@@ -354,6 +354,7 @@ export class Choreographer {
       case 'library':
       case 'server':
       case 'printer':
+      case 'skills':
         return this.privateSpot(actor, action.place)
           ?? this.freeSpot(actor, PLACE_SPOT_PREFIXES[action.place])
           ?? actor.home;

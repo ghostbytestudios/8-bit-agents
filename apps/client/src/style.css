@@ -202,6 +202,234 @@ select.pixel-input {
   color: var(--off);
 }
 
+/* ── War Room: file cabinet and skill shelf ──────────────────────────────── */
+
+#game.over-hotspot {
+  cursor: pointer;
+}
+
+.hotspot-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  padding: 4px 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--ink);
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.hotspot-tip[hidden] {
+  display: none;
+}
+
+.files,
+.skills {
+  width: min(980px, 100%);
+}
+
+.files__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.files__root {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--off);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files__columns,
+.skills__columns {
+  display: grid;
+  grid-template-columns: minmax(200px, 2fr) 3fr;
+  gap: 10px;
+  min-height: 0;
+}
+
+.files__tree,
+.skills__list {
+  max-height: 56vh;
+  overflow: auto;
+  padding: 4px 0;
+  background: var(--ink);
+}
+
+.files__item,
+.skills__item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.files__item:hover:not(:disabled),
+.skills__item:hover {
+  background: var(--panel);
+}
+
+.files__item[aria-selected='true'],
+.skills__item[aria-current='true'] {
+  color: var(--ink);
+  background: var(--accent);
+}
+
+.files__item:disabled {
+  color: var(--off);
+  cursor: default;
+}
+
+.files__item:focus-visible,
+.skills__item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.files__touch {
+  margin-left: auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--architect);
+}
+
+.files__touch--write {
+  color: var(--worker);
+}
+
+.files__item[aria-selected='true'] .files__touch {
+  color: var(--ink);
+}
+
+.files__empty {
+  margin: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  line-height: 1.6;
+  color: var(--off);
+}
+
+.files__preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ink);
+}
+
+.files__preview-path {
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 7px;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+  border-bottom: 2px solid var(--panel);
+}
+
+.files__content {
+  flex: 1;
+  max-height: 52vh;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.skills__side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.skills__item {
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 8px;
+  white-space: normal;
+}
+
+.skills__item-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.skills__item-roles {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--off);
+}
+
+.skills__item[aria-current='true'] .skills__item-roles {
+  color: var(--ink);
+}
+
+.skills__item.is-off .skills__item-name {
+  text-decoration: line-through;
+}
+
+.skills__editor {
+  min-width: 0;
+  margin: 0;
+}
+
+.skills__editor .settings-field {
+  margin: 10px 0;
+}
+
+.skills__description,
+.skills__body {
+  resize: vertical;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.skills__delete {
+  background: var(--danger);
+}
+
+.skills__delete[hidden] {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .files__columns,
+  .skills__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .files__tree,
+  .skills__list {
+    max-height: 28vh;
+  }
+
+  .files__content {
+    max-height: 36vh;
+  }
+}
+
 html,
 body {
   margin: 0;

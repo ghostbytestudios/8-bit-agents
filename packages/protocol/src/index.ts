@@ -163,6 +163,36 @@ export type ProviderSettings = z.infer<typeof ProviderSettingsSchema>;
 export type TeamMember = z.infer<typeof TeamMemberSchema>;
 export type KeyStatus = z.infer<typeof KeyStatusSchema>;
 
+// ── Workspace files and skills (the War Room's cabinet and shelf) ────────────
+
+export const MAX_SKILL_BODY = 16_000;
+export const MAX_SKILLS = 100;
+export const MAX_FILE_ENTRIES = 2_000;
+/** Room for the server's 100 KB read cap plus its truncation note. */
+export const MAX_FILE_PREVIEW_CHARS = 120_000;
+const workspacePath = z.string().min(1).max(500);
+
+/** The roles a skill can be given to. */
+export const SkillRoleSchema = z.enum(['boss', 'architect', 'worker']);
+export const SKILL_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
+/** A SKILL.md file: when to use it (description) and what it says (body). */
+export const SkillSchema = z.object({
+  id: z.string().regex(SKILL_ID_PATTERN, 'lowercase letters, digits and dashes'),
+  name: z.string().trim().min(1).max(64),
+  description: z.string().trim().min(1).max(300),
+  roles: z.array(SkillRoleSchema).min(1).max(3),
+  enabled: z.boolean(),
+  body: z.string().max(MAX_SKILL_BODY),
+});
+
+/** Saving without an id creates a new skill. */
+export const SkillDraftSchema = SkillSchema.extend({ id: SkillSchema.shape.id.optional() });
+
+export type SkillRole = z.infer<typeof SkillRoleSchema>;
+export type Skill = z.infer<typeof SkillSchema>;
+export type SkillDraft = z.infer<typeof SkillDraftSchema>;
+
 export const HarnessCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('settings.update'), settings: AppSettingsSchema }),
   /** Keys travel browser → server once and are never sent back. */
@@ -174,6 +204,11 @@ export const HarnessCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('human.respond'), requestId: id, answer: text }),
   z.object({ type: z.literal('agent.message'), agentId: id, text }),
   z.object({ type: z.enum(['agent.pause', 'agent.resume', 'agent.stop']), agentId: id }),
+  z.object({ type: z.literal('files.list') }),
+  z.object({ type: z.literal('file.read'), path: workspacePath }),
+  z.object({ type: z.literal('skills.list') }),
+  z.object({ type: z.literal('skill.save'), skill: SkillDraftSchema }),
+  z.object({ type: z.literal('skill.delete'), id: SkillSchema.shape.id }),
 ]);
 
 /** Bumped whenever the wire format changes incompatibly. */
@@ -197,6 +232,16 @@ export const ServerMessageSchema = z.discriminatedUnion('type', [
     detail: z.string().max(500),
     models: z.array(z.string().max(128)).max(500),
   }),
+  /** The workspace's files: paths relative to `root`, folders end in "/". */
+  z.object({
+    type: z.literal('files'),
+    root: z.string().max(500),
+    entries: z.array(z.string().max(600)).max(MAX_FILE_ENTRIES),
+    truncated: z.boolean(),
+  }),
+  z.object({ type: z.literal('file'), path: workspacePath, content: z.string().max(MAX_FILE_PREVIEW_CHARS) }),
+  /** Every skill on the shelf; sent on request and whenever one changes. */
+  z.object({ type: z.literal('skills'), skills: z.array(SkillSchema).max(MAX_SKILLS) }),
 ]);
 
 /** Browser → server. `commandId` lets the server acknowledge (or reject) each command. */

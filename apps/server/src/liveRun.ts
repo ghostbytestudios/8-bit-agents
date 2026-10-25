@@ -3,10 +3,13 @@ import { clip } from './agentLoop';
 import type { RunHandle } from './hub';
 import { Run } from './orchestrator';
 import type { SettingsService } from './settings/service';
+import type { SkillStore } from './skills';
 import { Workspace } from './workspace';
 
 export interface LiveRunDeps {
   settings: SettingsService;
+  /** The War Room's skill shelf; each run takes the enabled skills as they are when it starts. */
+  skills?: SkillStore;
   /** Env vars kept out of agent shells on top of the pattern-based scrub. */
   credentialNames: readonly string[];
   emit(event: HarnessEvent): void;
@@ -23,11 +26,12 @@ export class LiveRun implements RunHandle {
   constructor(private readonly deps: LiveRunDeps) {}
 
   async start(goal: string): Promise<void> {
-    const { settings, credentialNames, emit } = this.deps;
+    const { settings, skills, credentialNames, emit } = this.deps;
     let run: Run;
     try {
       const workspace = await Workspace.open(settings.settings.workspace, credentialNames);
-      run = new Run({ config: settings.runConfig(), providers: settings.providers(), workspace, emit });
+      const shelf = (await skills?.list())?.filter((skill) => skill.enabled) ?? [];
+      run = new Run({ config: settings.runConfig(), providers: settings.providers(), workspace, skills: shelf, emit });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       emit({ type: 'run.started', goal: clip(goal, MAX_TEXT) });

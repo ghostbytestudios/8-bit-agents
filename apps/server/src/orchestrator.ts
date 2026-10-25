@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { MAX_TEXT, type AgentRole, type HarnessEvent, type HumanInputKind, type TaskState } from '@harness/protocol';
+import { MAX_TEXT, type AgentRole, type HarnessEvent, type HumanInputKind, type Skill, type TaskState } from '@harness/protocol';
 import { clip, runAgent, type AgentLoopResult } from './agentLoop';
 import type { RoleName, RunConfig } from './config';
-import { ARCHITECT_PROMPT, BOSS_PROMPT, WORKER_PROMPT, architectBrief, bossBrief, roundReport, workerBrief } from './prompts';
+import { ARCHITECT_PROMPT, BOSS_PROMPT, WORKER_PROMPT, architectBrief, bossBrief, roundReport, skillsSection, workerBrief } from './prompts';
 import type { Conversation, ModelProvider, ToolResult, TurnInput, TurnUsage } from './providers/types';
-import { ARCHITECT_TOOLS, BOSS_TOOLS, WORKER_TOOLS, toolSpecs, type NewTask, type RunPort, type ToolDef } from './tools';
+import { ARCHITECT_TOOLS, BOSS_TOOLS, READ_SKILL_TOOL, WORKER_TOOLS, toolSpecs, type NewTask, type RunPort, type ToolDef } from './tools';
 import type { Workspace } from './workspace';
 
 /**
@@ -38,10 +38,17 @@ export interface RunDeps {
   config: RunConfig;
   providers: ReadonlyMap<string, ModelProvider>;
   workspace: Workspace;
+  /** Enabled skills from the War Room shelf; each role sees only the ones given to it. */
+  skills?: readonly Skill[];
   emit(event: HarnessEvent): void;
 }
 
-const ROLE_SETUP: Record<RoleName, { prompt: string; tools: readonly ToolDef[] }> = {
+interface RoleSetup {
+  prompt: string;
+  tools: readonly ToolDef[];
+}
+
+const ROLE_SETUP: Record<RoleName, RoleSetup> = {
   boss: { prompt: BOSS_PROMPT, tools: BOSS_TOOLS },
   architect: { prompt: ARCHITECT_PROMPT, tools: ARCHITECT_TOOLS },
   worker: { prompt: WORKER_PROMPT, tools: WORKER_TOOLS },
@@ -228,6 +235,17 @@ export class Run implements RunPort {
     this.architectAnswer = answer;
   }
 
+  readSkill(agentId: string, name: string): string {
+    const skills = this.skillsFor(this.roleOf(agentId));
+    const wanted = name.trim().toLowerCase();
+    const skill = skills.find((candidate) => candidate.name.toLowerCase() === wanted || candidate.id === wanted);
+    if (!skill) {
+      const names = skills.map((candidate) => `"${candidate.name}"`).join(', ');
+      throw new Error(`You have no skill called "${name}". Your skills: ${names || 'none'}.`);
+    }
+    return `# ${skill.name}\n\n${skill.body || '(This skill is empty.)'}`;
+  }
+
   async askHuman(agentId: string, prompt: string, options: readonly string[], kind: HumanInputKind): Promise<string> {
     this.signal.throwIfAborted();
     // Random, not sequential: an answer meant for an old run's card can never match a new run's question.
@@ -275,15 +293,33 @@ export class Run implements RunPort {
     const { provider: providerId, model, effort } = this.deps.config.roles[role];
     const provider = this.deps.providers.get(providerId);
     if (!provider) throw new Error(`No provider "${providerId}" is configured for the ${role}.`);
-    const { prompt, tools } = ROLE_SETUP[role];
+    const { prompt, tools } = this.setupFor(role);
     return provider.startConversation({ model, system: prompt, tools: toolSpecs(tools), effort });
+  }
+
+  private roleOf(agentId: string): RoleName {
+    if (agentId === BOSS_ID) return 'boss';
+    if (agentId === ARCHITECT_ID) return 'architect';
+    return 'worker';
+  }
+
+  private skillsFor(role: RoleName): readonly Skill[] {
+    return (this.deps.skills ?? []).filter((skill) => skill.enabled && skill.roles.includes(role));
+  }
+
+  /** A role with skills gets them listed in its prompt, plus the tool to read them. */
+  private setupFor(role: RoleName): RoleSetup {
+    const base = ROLE_SETUP[role];
+    const skills = this.skillsFor(role);
+    if (!skills.length) return base;
+    return { prompt: `${base.prompt}\n\n${skillsSection(skills)}`, tools: [...base.tools, READ_SKILL_TOOL] };
   }
 
   private loop(agentId: string, conversation: Conversation, role: RoleName, finalTools: readonly string[], input: TurnInput): Promise<AgentLoopResult> {
     return runAgent({
       agentId,
       conversation,
-      tools: ROLE_SETUP[role].tools,
+      tools: this.setupFor(role).tools,
       finalTools,
       context: { agentId, run: this, signal: this.signal },
       maxTurns: this.deps.config.limits.maxTurnsPerTask,

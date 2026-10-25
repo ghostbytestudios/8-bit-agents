@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { HarnessEvent } from '@harness/protocol';
+import type { HarnessEvent, Skill } from '@harness/protocol';
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from './config';
 import { Run } from './orchestrator';
@@ -33,6 +33,7 @@ class ScriptedProvider implements ModelProvider {
   readonly id = 'fake';
   readonly isLocal = true;
   readonly received: Array<{ role: Role; input: TurnInput }> = [];
+  readonly conversations: Array<{ role: Role; options: ConversationOptions }> = [];
   constructor(private readonly script: Script) {}
 
   async listModels() {
@@ -41,6 +42,7 @@ class ScriptedProvider implements ModelProvider {
 
   startConversation(options: ConversationOptions): Conversation {
     const role = roleOf(options);
+    this.conversations.push({ role, options });
     const sent: TurnInput[] = [];
     return {
       send: async (input) => {
@@ -62,7 +64,7 @@ const CONFIG_INPUT = {
   workers: 2,
 };
 
-async function setup(script: Script, overrides: Record<string, unknown> = {}) {
+async function setup(script: Script, overrides: Record<string, unknown> = {}, skills: Skill[] = []) {
   const dir = await mkdtemp(path.join(tmpdir(), 'harness-run-'));
   const workspace = await Workspace.open(path.join(dir, 'ws'));
   const provider = new ScriptedProvider(script);
@@ -71,6 +73,7 @@ async function setup(script: Script, overrides: Record<string, unknown> = {}) {
     config: parseConfig({ ...CONFIG_INPUT, ...overrides }, 'test'),
     providers: new Map([['fake', provider]]),
     workspace,
+    skills,
     emit: (event) => events.push(event),
   });
   return { dir, workspace, provider, events, run };
@@ -92,6 +95,38 @@ function teamScript(worker: Script): Script {
 }
 
 const fileFromBrief = (sent: TurnInput[]) => (sent[0].text?.match(/YOUR TASK: Write (\S+)/)?.[1] ?? 'unknown.txt');
+
+describe('Run skills', () => {
+  const pythonStyle: Skill = { id: 'py', name: 'Python style', description: 'How we write Python', roles: ['worker'], enabled: true, body: 'Always add type hints.' };
+  const switchedOff: Skill = { ...pythonStyle, id: 'old', name: 'Old notes', enabled: false };
+
+  it('lists a role\'s skills in its prompt and lets it read them; other roles get neither', async () => {
+    const { provider, run } = await setup(teamScript((_role, turn, input, sent) => {
+      if (turn === 0) return calls(['read_skill', { name: 'python style' }]);
+      if (turn === 1) {
+        expect(input.toolResults?.[0]).toMatchObject({ content: '# Python style\n\nAlways add type hints.' });
+        return calls(['write_file', { path: fileFromBrief(sent), content: 'x: int = 1' }]);
+      }
+      return calls(['complete_task', { summary: 'done', success: true }]);
+    }), {}, [pythonStyle, switchedOff]);
+    await run.start('Make two files');
+
+    const worker = provider.conversations.find((conversation) => conversation.role === 'worker');
+    const architect = provider.conversations.find((conversation) => conversation.role === 'architect');
+    expect(worker?.options.system).toContain('- Python style: How we write Python');
+    expect(worker?.options.system).not.toContain('Old notes');
+    expect(worker?.options.tools.map((spec) => spec.name)).toContain('read_skill');
+    expect(architect?.options.system).not.toContain('Skills:');
+    expect(architect?.options.tools.map((spec) => spec.name)).not.toContain('read_skill');
+  });
+
+  it('tells an agent which skills it has when it asks for one it does not', () => {
+    return setup(() => calls(), {}, [pythonStyle]).then(({ run }) => {
+      expect(() => run.readSkill('worker-1', 'Old notes')).toThrow('Your skills: "Python style"');
+      expect(() => run.readSkill('architect', 'Python style')).toThrow('Your skills: none');
+    });
+  });
+});
 
 describe('Run', () => {
   it('plans, builds tasks in parallel and finishes with the Boss summary', async () => {

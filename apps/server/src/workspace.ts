@@ -113,10 +113,16 @@ export class Workspace {
 
   /** Files under `dir`, recursively (skipping node_modules/.git), as workspace-relative paths. */
   async listFiles(dir = '.'): Promise<string[]> {
+    const { entries, truncated } = await this.listTree(dir, MAX_LIST_ENTRIES);
+    return truncated ? [...entries, `… (stopped after ${MAX_LIST_ENTRIES} entries)`] : entries;
+  }
+
+  /** Breadth-first, so a cut-off listing still shows the top of the tree. Folders end in "/". */
+  async listTree(dir: string, maxEntries: number): Promise<{ entries: string[]; truncated: boolean }> {
     const start = await this.resolve(dir);
     const results: string[] = [];
     const queue = [start];
-    while (queue.length && results.length < MAX_LIST_ENTRIES) {
+    while (queue.length && results.length < maxEntries) {
       const current = queue.shift() as string;
       const entries = await readdir(current, { withFileTypes: true }).catch(() => []);
       for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
@@ -127,11 +133,10 @@ export class Workspace {
           results.push(`${shown}/`);
           if (!SKIPPED_DIRS.has(entry.name)) queue.push(full);
         } else results.push(shown);
-        if (results.length >= MAX_LIST_ENTRIES) break;
+        if (results.length >= maxEntries) break;
       }
     }
-    if (results.length >= MAX_LIST_ENTRIES) results.push(`… (stopped after ${MAX_LIST_ENTRIES} entries)`);
-    return results;
+    return { entries: results, truncated: results.length >= maxEntries };
   }
 
   async readFile(relative: string): Promise<string> {

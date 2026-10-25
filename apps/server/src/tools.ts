@@ -27,6 +27,8 @@ export interface RunPort {
   completeTask(agentId: string, summary: string, isSuccess: boolean): void;
   finishRun(agentId: string, summary: string): void;
   answerQuestion(agentId: string, answer: string): void;
+  /** The full text of one of this agent's skills. */
+  readSkill(agentId: string, name: string): string;
 }
 
 export interface ToolContext {
@@ -183,6 +185,15 @@ const finishRun = tool({
     run.finishRun(agentId, input.summary);
     return 'Run finished.';
   },
+});
+
+/** Only given to roles that have skills on the shelf. */
+export const READ_SKILL_TOOL = tool({
+  name: 'read_skill',
+  description: 'Read one of your skills (listed in your instructions) in full before doing the work it covers.',
+  schema: z.object({ name: z.string().min(1).max(64).describe('The skill name exactly as listed') }),
+  summarize: (input) => input.name,
+  run: async (input, { agentId, run }) => run.readSkill(agentId, input.name),
 });
 
 export const BOSS_TOOLS: readonly ToolDef[] = [createTasks, askHuman, finishRun];

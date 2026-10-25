@@ -31,7 +31,7 @@ let lastRun: FakeRun | null = null;
 const TOKEN = 'a'.repeat(64);
 
 async function boot() {
-  const hub = new RunHub((emit) => (lastRun = new FakeRun(emit)), null, quietLog);
+  const hub = new RunHub((emit) => (lastRun = new FakeRun(emit)), {}, quietLog);
   server = await startServer({ hub, host: '127.0.0.1', port: 0, allowedOrigins: [ORIGIN], sessionToken: TOKEN, log: quietLog });
   return { hub, url: `ws://127.0.0.1:${server.port}/ws` };
 }

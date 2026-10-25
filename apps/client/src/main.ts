@@ -7,18 +7,20 @@ import { OfficeCamera } from './engine/officeCamera';
 import { ENDESGA_32, createPaletteTexture } from './engine/palette';
 import { PixelPipeline } from './engine/pixelPipeline';
 import { Dock } from './hud/dock';
+import { FilesPanel, type TouchKind } from './hud/filesPanel';
 import { NameTags } from './hud/nameTags';
 import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
 import { SettingsPanel } from './hud/settingsPanel';
 import { needsSetup, SAMPLE_GOAL } from './hud/setup';
+import { SkillsPanel } from './hud/skillsPanel';
 import { TopBar } from './hud/topBar';
 import { WelcomePanel } from './hud/welcome';
-import { SocketFeed, probe } from './net/socketFeed';
+import { SocketFeed, probe, type Ack, type LibrarySource } from './net/socketFeed';
 import { serverUrl } from './net/desktop';
 import { MockRun } from './sim/mockRun';
 import { WorldStore } from './state/world';
 import { Crowd } from './world/crowd';
-import { FRONT_DOOR_OUTSIDE, OFFICE_DEPTH, OFFICE_WIDTH } from './world/layout';
+import { FRONT_DOOR_OUTSIDE, HOTSPOTS, OFFICE_DEPTH, OFFICE_WIDTH, type HotspotDef } from './world/layout';
 import { buildOffice } from './world/office';
 
 const PIXELS_PER_UNIT = 32;
@@ -40,6 +42,12 @@ const PROBE_TIMEOUT_MS = 1_500;
 const CLICK_SLOP_PX = 4;
 /** How close (in game pixels) a click must land to a character's body to pick it. */
 const PICK_RADIUS_GAME_PX = 7;
+/** Furniture is wider than a person; characters standing in front still win. */
+const HOTSPOT_RADIUS_GAME_PX = 10;
+/** Agent tools whose summary is the path they read or wrote. */
+const FILE_TOOLS: Readonly<Record<string, TouchKind>> = {
+  read_file: 'read', Read: 'read', write_file: 'write', Write: 'write', Edit: 'write', MultiEdit: 'write',
+};
 /** Refreshes "12s ago" labels even when no events arrive. */
 const AGE_REFRESH_MS = 1000;
 const PAN_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
@@ -91,6 +99,7 @@ function renderHud(): void {
   // Static labels and booleans only; nothing from agents goes through innerHTML.
   hud.innerHTML = [
     '<kbd>CLICK</kbd> INSPECT · <kbd>F</kbd> FOLLOW · <kbd>ESC</kbd> CLOSE',
+    'WAR ROOM: <kbd>CLICK</kbd> CABINET · SHELF',
     '<kbd>I</kbd> INBOX · <kbd>T</kbd> TASKS · <kbd>L</kbd> LOG · <kbd>H</kbd> PANELS',
     `<kbd>DRAG</kbd>/<kbd>WASD</kbd> PAN · <kbd>WHEEL</kbd>/<kbd>1-4</kbd> ZOOM ${zoomLevel}`,
     `<kbd>P</kbd> PALETTE ${flag(palette)} · <kbd>B</kbd> DITHER ${flag(dither)}`,
@@ -130,6 +139,8 @@ function applyAppearance(appearance: AppSettings['appearance']): void {
 
 interface InputHandlers {
   onClick(point: ScreenPoint): void;
+  /** The pointer moved over the office without dragging (null: it left). */
+  onHover(point: ScreenPoint | null): void;
   /** Returns true when the key was handled. */
   onKey(key: string): boolean;
 }
@@ -144,7 +155,10 @@ function setupInput(handlers: InputHandlers): () => { right: number; forward: nu
     canvas.classList.add('dragging');
   });
   canvas.addEventListener('pointermove', (event) => {
-    if (!drag) return;
+    if (!drag) {
+      if (event.pointerType === 'mouse') handlers.onHover({ x: event.clientX, y: event.clientY });
+      return;
+    }
     officeCamera.dragBy((event.clientX - drag.x) / pixelScale, (event.clientY - drag.y) / pixelScale);
     drag = { x: event.clientX, y: event.clientY };
     if (pressedAt && Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) > CLICK_SLOP_PX) {
@@ -162,6 +176,7 @@ function setupInput(handlers: InputHandlers): () => { right: number; forward: nu
     endDrag();
   });
   canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointerleave', () => handlers.onHover(null));
 
   // Embedded in a page, the wheel scrolls the page until the visitor clicks into the office.
   let isEngaged = !IS_DEMO;
@@ -219,6 +234,15 @@ function createSelectionRing(): Mesh {
   ring.renderOrder = 1;
   ring.visible = false;
   return ring;
+}
+
+/** The label that follows the pointer over clickable furniture. */
+function createHotspotTip(): HTMLElement {
+  const tip = document.createElement('div');
+  tip.className = 'hotspot-tip';
+  tip.hidden = true;
+  document.body.append(tip);
+  return tip;
 }
 
 /** Commands leave through the same schema the backend will enforce; false if nothing was sent. */
@@ -291,6 +315,27 @@ async function start(): Promise<void> {
   if (IS_DEMO && window.innerWidth < NARROW_DEMO_PX) dock.closeTabs();
   nameTags.onSelect = select;
   const settingsPanel = new SettingsPanel(document.body, { send: (command) => sendCommand(feed, command) });
+  // The War Room's cabinet and shelf: live from the server, or the demo's pretend ones.
+  const filesPanel = new FilesPanel(document.body, { send: (command) => sendCommand(feed, command) });
+  const skillsPanel = new SkillsPanel(document.body, { send: (command) => sendCommand(feed, command) });
+  const library: LibrarySource | null = socket ?? mock?.library ?? null;
+  library?.onLibrary((reply) => {
+    if (reply.type === 'files') filesPanel.setListing(reply);
+    else if (reply.type === 'file') filesPanel.setFile(reply);
+    else skillsPanel.setSkills(reply.skills);
+  });
+  const openHotspot = (hotspot: HotspotDef) => (hotspot.id === 'files' ? filesPanel.open() : skillsPanel.open());
+  const isDialogOpen = () => settingsPanel.isOpen || filesPanel.isOpen || skillsPanel.isOpen;
+  /** A refused command's reason goes to whichever dialog is open, else the top bar. */
+  const showRefusal = (ack: Ack) => {
+    if (ack.ok) return;
+    const message = ack.error ?? 'The server refused that.';
+    if (skillsPanel.isOpen) skillsPanel.showError(message);
+    else if (filesPanel.isOpen) filesPanel.showError(message);
+    else if (settingsPanel.isOpen) settingsPanel.showError(message);
+    else topBar.showNotice(message);
+  };
+  mock?.library.onAck(showRefusal);
   const welcome = new WelcomePanel(document.body, {
     onSetUpModels: () => settingsPanel.open('models'),
     onChangeWorkspace: () => settingsPanel.open('limits'),
@@ -316,12 +361,7 @@ async function start(): Promise<void> {
       topBar.setConnection(status);
       renderPanels();
     });
-    socket.onAck((ack) => {
-      if (ack.ok) return;
-      const message = ack.error ?? 'The server refused that.';
-      if (settingsPanel.isOpen) settingsPanel.showError(message);
-      else topBar.showNotice(message);
-    });
+    socket.onAck(showRefusal);
     socket.onProviderTested((result) => settingsPanel.showTest(result));
     socket.onSettings((snapshot) => {
       settingsPanel.setSettings(snapshot);
@@ -344,6 +384,12 @@ async function start(): Promise<void> {
     }
     world.apply(parsed.data);
     choreographer.handle(parsed.data.event, world.state);
+    const { event } = parsed.data;
+    if (event.type === 'run.started') filesPanel.clearTouched();
+    else if (event.type === 'tool.started' && FILE_TOOLS[event.tool]) {
+      const who = world.state.agents.get(event.agentId)?.name ?? event.agentId;
+      filesPanel.markTouched(event.summary, who, FILE_TOOLS[event.tool]);
+    }
   });
   world.subscribe(renderPanels);
   setInterval(renderPanels, AGE_REFRESH_MS);
@@ -362,14 +408,38 @@ async function start(): Promise<void> {
     }));
     return pickActor(actors, point, PICK_RADIUS_GAME_PX * pixelScale);
   };
+  // Furniture as a floor-to-top segment, so the same screen-space picking works for it.
+  const hotspotAt = (point: ScreenPoint): HotspotDef | null => {
+    const spots: ScreenActor[] = HOTSPOTS.map((hotspot) => ({
+      id: hotspot.id,
+      foot: toScreen(scratch.set(hotspot.at[0], 0, hotspot.at[1]), officeCamera.camera),
+      head: toScreen(scratch.set(hotspot.at[0], hotspot.height, hotspot.at[1]), officeCamera.camera),
+    }));
+    const id = pickActor(spots, point, HOTSPOT_RADIUS_GAME_PX * pixelScale);
+    return HOTSPOTS.find((hotspot) => hotspot.id === id) ?? null;
+  };
+  const tip = createHotspotTip();
 
   const panInput = setupInput({
-    onClick: (point) => select(pickAt(point)),
+    onClick: (point) => {
+      const actorId = pickAt(point);
+      const hotspot = actorId ? null : hotspotAt(point);
+      if (hotspot) openHotspot(hotspot);
+      else select(actorId);
+    },
+    onHover: (point) => {
+      const hotspot = point && !pickAt(point) ? hotspotAt(point) : null;
+      canvas.classList.toggle('over-hotspot', hotspot !== null);
+      tip.hidden = hotspot === null;
+      if (!hotspot || !point) return;
+      tip.textContent = `${hotspot.label} · CLICK`;
+      tip.style.transform = `translate(${Math.round(point.x + 14)}px, ${Math.round(point.y - 10)}px)`;
+    },
     onKey: (key) => {
       if (welcome.isOpen) return true;
-      // While Settings is open, Escape closes it and office shortcuts are paused.
-      if (settingsPanel.isOpen) {
-        if (key === 'escape') settingsPanel.close();
+      // While a dialog is open, Escape closes it and office shortcuts are paused.
+      if (isDialogOpen()) {
+        if (key === 'escape') [settingsPanel, filesPanel, skillsPanel].find((panel) => panel.isOpen)?.close();
         return true;
       }
       if (key === 'escape') select(null);

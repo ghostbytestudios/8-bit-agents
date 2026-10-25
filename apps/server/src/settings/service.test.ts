@@ -130,7 +130,7 @@ describe('SettingsStore', () => {
 describe('RunHub settings messages', () => {
   it('sends settings on connect, broadcasts changes, and replies with test results', async () => {
     const { service } = await setup();
-    const hub = new RunHub(() => { throw new Error('no runs here'); }, service, quiet);
+    const hub = new RunHub(() => { throw new Error('no runs here'); }, { settings: service }, quiet);
     const received: ServerMessage[] = [];
     hub.connect((message) => received.push(message));
     expect(received.map((message) => message.type)).toEqual(['hello', 'settings']);

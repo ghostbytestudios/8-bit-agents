@@ -11,7 +11,8 @@ import type { RunHub } from './hub';
  * open a socket to your agents.
  */
 
-const MAX_MESSAGE_BYTES = 64 * 1024;
+/** Fits a full-length skill (16,000 characters, up to 4 bytes each in UTF-8) with JSON escaping. */
+const MAX_MESSAGE_BYTES = 192 * 1024;
 const MAX_MESSAGES_PER_SECOND = 20;
 const HEARTBEAT_MS = 15_000;
 /** Close codes: 1003 unsupported data, 1008 policy violation. */

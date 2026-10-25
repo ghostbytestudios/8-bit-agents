@@ -1,4 +1,5 @@
-import type { Envelope, EventFeed, HarnessCommand, HarnessEvent, HumanInputKind } from '@harness/protocol';
+import type { Envelope, EventFeed, HarnessCommand, HarnessEvent, HumanInputKind, SkillRole } from '@harness/protocol';
+import { DEMO_FILES, MockLibrary } from './mockLibrary';
 
 /**
  * A scripted, endless fake run ("build a todo app") that emits the same events a
@@ -19,6 +20,8 @@ const WORKER_COUNT = 6;
 const DISPATCH_INTERVAL_SECONDS = 1.5;
 const READ_BURST_SECONDS = 0.35;
 const NEW_SPRINT_SIZE = 4;
+const SKILL_READ_CHANCE = 0.3;
+const SKILL_READ_SECONDS = 2.5;
 
 const TASK_POOL = [
   'Set up REST API skeleton', 'Design todo data model', 'Add SQLite storage layer', 'Build todo list UI',
@@ -26,10 +29,8 @@ const TASK_POOL = [
   'Add due-date reminders', 'Add drag-and-drop sorting', 'Write README and docs', 'Add session auth',
   'Optimize list rendering', 'Add dark mode',
 ];
-const FILES = [
-  'src/server.ts', 'src/routes/todos.ts', 'src/db/schema.ts', 'src/ui/TodoList.tsx', 'src/ui/TodoForm.tsx',
-  'tests/todos.test.ts', 'package.json', 'README.md', 'src/validation.ts',
-];
+/** The same pretend workspace the War Room's file cabinet shows. */
+const FILES = Object.keys(DEMO_FILES).filter((file) => !file.startsWith('docs/'));
 const SEARCHES = ['express zod validation', 'better-sqlite3 migrations', 'react list virtualization', 'vitest supertest example'];
 const QUESTIONS: readonly Question[] = [
   { prompt: 'SQLite or Postgres for storage?', options: ['SQLite', 'Postgres'], kind: 'choice' },
@@ -45,6 +46,8 @@ const pickSome = <T>(items: readonly T[], count: number): T[] =>
 
 export class MockRun implements EventFeed {
   readonly isSimulated = true;
+  /** The demo's file cabinet and skill shelf. */
+  readonly library = new MockLibrary();
   private readonly listeners = new Set<(raw: unknown) => void>();
   private readonly runId = `mock-${Date.now().toString(36)}`;
   private readonly pendingAnswers = new Map<string, (answer: string) => void>();
@@ -62,6 +65,7 @@ export class MockRun implements EventFeed {
   }
 
   send(command: HarnessCommand): boolean {
+    if (this.library.handle(command)) return true;
     if (command.type === 'human.respond') this.pendingAnswers.get(command.requestId)?.(command.answer);
     return true;
   }
@@ -129,6 +133,7 @@ export class MockRun implements EventFeed {
     this.say('boss', 'architect', 'Design a todo app: REST API, web UI, tests.');
     await this.sleep(4);
     this.status('architect', 'thinking');
+    await this.maybeReadSkill('architect', 'architect', 1);
     for (const file of ['package.json', 'README.md', 'docs/requirements.md']) {
       await this.tool('architect', 'Read', file, READ_BURST_SECONDS);
     }
@@ -176,6 +181,7 @@ export class MockRun implements EventFeed {
     try {
       this.emit({ type: 'task.updated', taskId: task.id, state: 'doing' });
       this.status(agentId, 'working');
+      await this.maybeReadSkill(agentId, 'worker', SKILL_READ_CHANCE);
       const readTool = pick(['Read', 'Grep', 'Glob']);
       for (const file of pickSome(FILES, Math.round(randomIn([2, 5])))) {
         await this.tool(agentId, readTool, file, READ_BURST_SECONDS);
@@ -204,6 +210,13 @@ export class MockRun implements EventFeed {
     } finally {
       this.busyWorkers.delete(agentId);
     }
+  }
+
+  /** A walk to the War Room shelf to read one of the skills you can edit there. */
+  private async maybeReadSkill(agentId: string, role: SkillRole, probability: number): Promise<void> {
+    const names = this.library.skillNames(role);
+    if (!names.length || !chance(probability)) return;
+    await this.tool(agentId, 'read_skill', pick(names), SKILL_READ_SECONDS);
   }
 
   private async runTests(agentId: string): Promise<void> {

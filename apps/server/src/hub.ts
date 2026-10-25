@@ -7,6 +7,8 @@ import {
   type ServerMessage,
 } from '@harness/protocol';
 import { SettingsError, type SettingsService } from './settings/service';
+import { SkillError, type SkillStore } from './skills';
+import { WorkspaceError } from './workspace';
 
 /**
  * Sits between browsers and the current run: numbers every event, keeps the run's log
@@ -29,6 +31,24 @@ export interface CommandOutcome {
   error?: string;
 }
 
+export interface FileListing {
+  root: string;
+  entries: string[];
+  truncated: boolean;
+}
+
+/** The workspace as the War Room's file cabinet sees it: look, don't touch. */
+export interface WorkspaceFiles {
+  list(): Promise<FileListing>;
+  read(path: string): Promise<string>;
+}
+
+export interface HubServices {
+  settings?: SettingsService;
+  files?: WorkspaceFiles;
+  skills?: SkillStore;
+}
+
 type Send = (message: ServerMessage) => void;
 type Logger = Pick<Console, 'warn' | 'error'>;
 
@@ -39,14 +59,17 @@ export class RunHub {
   private run: RunHandle | null = null;
   private isRunning = false;
   private readonly clients = new Set<Send>();
+  private readonly settings: SettingsService | null;
 
   constructor(
     private readonly createRun: (emit: (event: HarnessEvent) => void) => RunHandle,
-    private readonly settings: SettingsService | null = null,
+    private readonly services: HubServices = {},
     private readonly log: Logger = console,
   ) {
-    // Every open window sees settings changes, wherever they were made.
-    settings?.onChange((snapshot) => this.broadcast({ type: 'settings', ...snapshot }));
+    this.settings = services.settings ?? null;
+    // Every open window sees settings and skill changes, wherever they were made.
+    this.settings?.onChange((snapshot) => this.broadcast({ type: 'settings', ...snapshot }));
+    services.skills?.onChange((skills) => this.broadcast({ type: 'skills', skills }));
   }
 
   /** Greets a new client with settings and the current run so far; returns the disconnect function. */
@@ -93,6 +116,33 @@ export class RunHub {
       case 'agent.resume':
       case 'agent.stop':
         return { ok: false, error: 'Talking to, pausing and stopping single agents arrives in Phase 6.' };
+      case 'files.list':
+        return this.withService('files', async (files) => reply({ type: 'files', ...(await files.list()) }));
+      case 'file.read':
+        return this.withService('files', async (files) => reply({ type: 'file', path: command.path, content: await files.read(command.path) }));
+      case 'skills.list':
+        return this.withService('skills', async (skills) => reply({ type: 'skills', skills: await skills.list() }));
+      case 'skill.save':
+        return this.withService('skills', async (skills) => void (await skills.save(command.skill)));
+      case 'skill.delete':
+        return this.withService('skills', (skills) => skills.delete(command.id));
+    }
+  }
+
+  /** Runs a file or skill request; their own errors are worded for people, anything else is logged. */
+  private async withService<K extends 'files' | 'skills'>(
+    name: K,
+    action: (service: NonNullable<HubServices[K]>) => Promise<void>,
+  ): Promise<CommandOutcome> {
+    const service = this.services[name];
+    if (!service) return { ok: false, error: `The ${name === 'files' ? 'file cabinet' : 'skill shelf'} is not available in this mode.` };
+    try {
+      await action(service);
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof WorkspaceError || error instanceof SkillError) return { ok: false, error: error.message };
+      this.log.error(`[hub] ${name} request failed`, error);
+      return { ok: false, error: `Could not ${name === 'files' ? 'read the workspace' : 'update the skills'}. See the server log.` };
     }
   }
 
