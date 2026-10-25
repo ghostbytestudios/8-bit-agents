@@ -1,0 +1,55 @@
+name: Bug report
+description: Something doesn't work the way it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Found a security problem? Please use the [security policy](https://github.com/ghostbytestudios/8-bit-agents/security/policy) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Settings
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: It's in the About window. Write "website demo" if it happened there.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Website demo
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Model provider
+      description: Which provider and model, if it's about a run.
+      placeholder: Claude, OpenAI, Ollama, ...
+  - type: textarea
+    id: log
+    attributes:
+      label: Error log
+      description: Help › Open Error Log. Remove API keys and private paths first.
+      render: text

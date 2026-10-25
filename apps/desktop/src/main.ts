@@ -171,7 +171,7 @@ function showAbout(): void {
     type: 'info' as const,
     title: `About ${APP_NAME}`,
     message: `${APP_NAME} ${app.getVersion()}`,
-    detail: [`Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`, '© 2026 Ghostbyte Studios', PROJECT_URL].join('\n'),
+    detail: [`Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`, '© 2026 Ghostbyte Studios · GPL-3.0-or-later', PROJECT_URL].join('\n'),
     buttons: ['OK'],
   };
   const shown = mainWindow ? dialog.showMessageBox(mainWindow, options) : dialog.showMessageBox(options);

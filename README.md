@@ -1,5 +1,9 @@
 # 8Bit Agents
 
+[![CI](https://github.com/ghostbytestudios/8-bit-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/ghostbytestudios/8-bit-agents/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ghostbytestudios/8-bit-agents)](https://github.com/ghostbytestudios/8-bit-agents/releases/latest)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
 A pixel-art office where AI agents plan, build and test your project while you watch.
 
 Give the team a goal. The Architect sketches a plan on the whiteboard, the Boss hands out tasks, and
@@ -74,8 +78,17 @@ Open `http://localhost:5173/?mock` to watch pretend agents without a server or A
 2. Push a tag with the same version, for example `v0.2.0`.
 3. GitHub Actions builds the three installers into a draft release. Check it, then publish.
 
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING](.github/CONTRIBUTING.md) to get
+started, and the [security policy](.github/SECURITY.md) to report a vulnerability privately.
+
 ## Credits
 
-Furniture models by [Kenney](https://kenney.nl) (CC0). Font: Press Start 2P.
+Furniture models by [Kenney](https://kenney.nl) (CC0). Font: Press Start 2P (SIL Open Font License).
 
-© 2026 Ghostbyte Studios
+## License
+
+© 2026 Ghostbyte Studios. 8Bit Agents is free software: you can share and change it under the
+[GNU General Public License v3.0 or later](LICENSE). Art and fonts keep their own licenses, listed above
+and in `apps/client/public/assets/CREDITS.json`.

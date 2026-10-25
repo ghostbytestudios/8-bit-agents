@@ -3,6 +3,7 @@
   "productName": "8Bit Agents",
   "private": true,
   "version": "0.2.0",
+  "license": "GPL-3.0-or-later",
   "description": "An 8-bit office where AI agents work on your goals.",
   "author": "Ghostbyte Studios <ghxstbytestudios@gmail.com>",
   "homepage": "https://github.com/ghostbytestudios/8-bit-agents",

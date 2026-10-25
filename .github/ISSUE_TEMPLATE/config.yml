@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/ghostbytestudios/8-bit-agents/security/policy
+    about: Please report vulnerabilities privately, not in a public issue.
+  - name: Try the demo
+    url: https://ghostbytestudios.github.io/8-bit-agents/
+    about: Play with the office in your browser before you report.
