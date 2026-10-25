@@ -8,6 +8,7 @@ import { ENDESGA_32, createPaletteTexture } from './engine/palette';
 import { PixelPipeline } from './engine/pixelPipeline';
 import { Dock } from './hud/dock';
 import { FilesPanel, type TouchKind } from './hud/filesPanel';
+import { HotspotLabels } from './hud/hotspotLabels';
 import { NameTags } from './hud/nameTags';
 import { pickActor, type ScreenActor, type ScreenPoint } from './hud/picking';
 import { SettingsPanel } from './hud/settingsPanel';
@@ -325,6 +326,7 @@ async function start(): Promise<void> {
     else skillsPanel.setSkills(reply.skills);
   });
   const openHotspot = (hotspot: HotspotDef) => (hotspot.id === 'files' ? filesPanel.open() : skillsPanel.open());
+  const hotspotLabels = new HotspotLabels(document.body, HOTSPOTS, openHotspot);
   const isDialogOpen = () => settingsPanel.isOpen || filesPanel.isOpen || skillsPanel.isOpen;
   /** A refused command's reason goes to whichever dialog is open, else the top bar. */
   const showRefusal = (ack: Ack) => {
@@ -479,6 +481,7 @@ async function start(): Promise<void> {
 
     pipeline.render(scene, officeCamera.camera);
     nameTags.update(officeCamera.camera, canvas, dt);
+    hotspotLabels.update(officeCamera.camera, canvas);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

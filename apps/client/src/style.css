@@ -617,6 +617,11 @@ button.name-tag:focus-visible {
   outline: none;
 }
 
+/* The War Room's cabinet and shelf: same tag, in the accent color. */
+.hotspot-label {
+  --role: var(--accent);
+}
+
 .actor-overlay.is-selected .name-tag {
   color: var(--ink);
   background: var(--role);
